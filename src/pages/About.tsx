@@ -1,5 +1,5 @@
 import { Container, Row, Col, Card } from "react-bootstrap";
-import { FaCheckCircle, FaCode, FaReact, FaGithub } from "react-icons/fa";
+import { FaCheckCircle, FaReact } from "react-icons/fa";
 
 export function About() {
   return (
@@ -31,40 +31,12 @@ export function About() {
             </Card.Body>
           </Card>
         </Col>
-
-        <Col md={6}>
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <Card.Title className="fw-semibold mb-3">
-                <FaCode className="text-info me-2" />
-                About the Developer
-              </Card.Title>
-              <p>
-                Hi, I’m <strong>PAIshanMadusha</strong> a passionate software
-                engineering student focused on building clean and functional web apps.
-                This project was created to improve my full-stack skills while
-                showcasing modern frontend architecture.
-              </p>
-              <p className="mb-0 fw-bold">
-                <a
-                  href="https://github.com/PAIshanMadusha"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-decoration-none"
-                >
-                  <FaGithub className="me-2" />
-                  View my GitHub Profile
-                </a>
-              </p>
-            </Card.Body>
-          </Card>
-        </Col>
       </Row>
 
       <Row className="text-center">
         <Col>
           <small className="text-muted">
-            &copy; {new Date().getFullYear()} Cart System. Built with ❤️ by Ishan.
+            &copy; {new Date().getFullYear()} Cart System.
           </small>
         </Col>
       </Row>
