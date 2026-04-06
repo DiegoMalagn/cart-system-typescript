@@ -42,3 +42,43 @@
   border-radius: 12px;
   cursor: pointer;
 }
+.image-container {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.product-image {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.image-container:hover .product-image {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+.product-card {
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.product-card:hover {
+  transform: scale(1.02);
+}
+
+.size-btn.selected {
+  background: black;
+  color: white;
+}
+
+.product-card .image-container {
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.product-card .product-image {
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.product-card .image-container:hover .product-image {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
