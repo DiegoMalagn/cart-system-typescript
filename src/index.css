@@ -82,3 +82,101 @@
   transform: scale(1.05);
   filter: brightness(1.1);
 }
+
+.add-to-cart {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.add-to-cart.added {
+  background-color: #218838; /* darker green */
+  transform: scale(1.1);       /* slight pop */
+}
+
+.add-to-cart {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  position: relative; /* for badge positioning */
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.add-to-cart:hover {
+  background-color: #218838;
+}
+
+.add-to-cart .added-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ffc107;
+  color: #212529;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  animation: pop 0.5s ease forwards;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.add-to-cart {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-weight: bold;
+  position: relative;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.add-to-cart:hover {
+  background-color: #218838;
+}
+
+.add-to-cart .added-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #ffc107;
+  color: #212529;
+  border-radius: 50%;
+  padding: 3px 7px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  animation: pop 0.3s ease forwards;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
