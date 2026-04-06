@@ -1,0 +1,44 @@
+.product-card {
+  cursor: pointer;
+}
+
+.image-container {
+  overflow: hidden;
+  border-radius: 16px;
+}
+
+.image-container img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.product-card:hover img {
+  transform: scale(1.05);
+  filter: brightness(1.1);
+}
+.size-btn {
+  border: 1px solid black;
+  padding: 8px 16px;
+  background: white;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.size-btn:hover {
+  background: black;
+  color: white;
+}
+
+.add-to-cart {
+  margin-top: 20px;
+  width: 100%;
+  padding: 12px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+}
