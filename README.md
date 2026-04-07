@@ -119,15 +119,4 @@ These screenshots illustrate how the system appears on desktop and mobile device
   <img src="https://github.com/user-attachments/assets/4da4faf2-b333-4af6-b6e0-1b4d526a4142" alt="Screenshot 4" width="340">
 </p>
 
----
 
-### 👨‍💻 Created by: 
-**Ishan Madhusha**  
-GitHub: [PAIshanMadusha](https://github.com/PAIshanMadusha)
-
-Feel free to explore my work and get in touch if you'd like to collaborate! 🚀
-
----
-
-## 📝 License:  
-This project is licensed under the MIT License : See the [LICENSE](LICENSE) file for details.

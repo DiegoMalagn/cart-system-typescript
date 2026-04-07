@@ -23,10 +23,10 @@ export function About() {
                 Key Features
               </Card.Title>
               <ul className="list-unstyled ms-2">
-                <li className="mb-2">🛒 Add and remove items from cart</li>
-                <li className="mb-2">💾 Auto-saves cart using localStorage</li>
-                <li className="mb-2">📱 Fully responsive layout</li>
-                <li className="mb-2">✅ Written in strongly typed TypeScript</li>
+                <li className="mb-2"> Add and remove items from cart</li>
+                <li className="mb-2">Auto-saves cart using localStorage</li>
+                <li className="mb-2"> Fully responsive layout</li>
+                <li className="mb-2"> Written in strongly typed TypeScript</li>
               </ul>
             </Card.Body>
           </Card>
