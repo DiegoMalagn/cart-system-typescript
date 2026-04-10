@@ -7,6 +7,15 @@ dotenv.config();
 
 console.log("Starting server...");
 
+// Use a numeric port for app.listen. Railway provides PORT as a string, so
+// parse it and fallback to 4000 when missing or invalid.
+const PORT: number = (() => {
+  const raw = process.env.PORT;
+  if (!raw) return 4000;
+  const parsed = parseInt(raw, 10);
+  return Number.isNaN(parsed) ? 4000 : parsed;
+})();
+
 const app = express();
 // Read client URL from environment and normalize (no trailing slash)
 const CLIENT_URL = (process.env.CLIENT_URL || "http://localhost:5173").trim().replace(/\/$/, "");
@@ -24,6 +33,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string,{
 
 app.get("/", (req, res) => {
   res.send("Server is alive");
+});
+
+// Simple health check endpoint for Railway / uptime/readiness checks
+app.get("/healthz", (_req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
 app.post("/checkout", async (req, res) => {
@@ -53,4 +67,6 @@ app.post("/checkout", async (req, res) => {
   }
 });
 
-app.listen(4000, () => console.log("Server running on port 4000"));
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server running on port ${PORT}`);
+});
