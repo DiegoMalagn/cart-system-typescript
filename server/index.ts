@@ -5,15 +5,22 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+console.log("Starting server...");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-06-20",
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string,{
+  apiVersion: "2026-03-25.dahlia",
+});
+
+app.get("/", (req, res) => {
+  res.send("Server is alive");
 });
 
 app.post("/checkout", async (req, res) => {
+  console.log("request received.");
   const { items } = req.body;
 
   try {
