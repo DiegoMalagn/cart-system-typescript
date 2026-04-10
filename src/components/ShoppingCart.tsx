@@ -12,7 +12,7 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
 
     async function handleCheckout() {
     console.log("Checkout clicked");
-    const res = await fetch("http://localhost:4000/checkout", {
+    const res = await fetch(origin === "http://localhost:4000" ? "http://localhost:4000/checkout" : "https://cart-system-typescript.vercel.app/checkout", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

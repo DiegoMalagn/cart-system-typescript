@@ -8,7 +8,14 @@ dotenv.config();
 console.log("Starting server...");
 
 const app = express();
-app.use(cors());
+// Read client URL from environment and normalize (no trailing slash)
+const CLIENT_URL = (process.env.CLIENT_URL || "http://localhost:5173").trim().replace(/\/$/, "");
+
+app.use(
+  cors({
+    origin: CLIENT_URL,
+  })
+);
 app.use(express.json());
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string,{
@@ -36,8 +43,8 @@ app.post("/checkout", async (req, res) => {
         },
         quantity: item.quantity,
       })),
-      success_url: "http://localhost:5173/success",
-      cancel_url: "http://localhost:5173/cancel",
+  success_url: `${CLIENT_URL}/payment/success`,
+  cancel_url: `${CLIENT_URL}/payment/failed`,
     });
 
     res.json({ url: session.url });

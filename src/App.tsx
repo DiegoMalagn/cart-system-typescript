@@ -6,6 +6,8 @@ import { Navbar } from "./components/Navbar";
 import { ShoppingCartProvider } from "./context/ShoppingCartContext";
 import Footer from "./components/Footer";
 import { ProductPage } from "./pages/ProductPage";
+import { PaymentSuccess } from "./pages/Success";
+import { PaymentFailed } from "./pages/Failed";
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
           <Route path="/product/:id" element={<ProductPage />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/failed" element={<PaymentFailed />} />
         </Routes>
       </Container>
       <Footer/>
