@@ -11,8 +11,11 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
   const { closeCart, cartItems } = useShoppingCart();
 
     async function handleCheckout() {
-    console.log("Checkout clicked");
-    const res = await fetch(origin === "http://localhost:4000" ? "http://localhost:4000/checkout" : "https://cart-system-typescript.vercel.app/checkout", {
+  console.log("Checkout clicked");
+  // Read API base URL from Vite env. Fallback to localhost for dev.
+  const API_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+
+  const res = await fetch(`${API_URL.replace(/\/$/, "")}/checkout`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
