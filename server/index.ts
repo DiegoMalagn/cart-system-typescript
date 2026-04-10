@@ -58,7 +58,7 @@ app.post("/checkout", async (req, res) => {
         quantity: item.quantity,
       })),
   success_url: `${CLIENT_URL}/success`,
-  cancel_url: `${CLIENT_URL}/failed`,
+  cancel_url: CLIENT_URL,
     });
 
     res.json({ url: session.url });
