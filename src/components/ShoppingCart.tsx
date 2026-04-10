@@ -11,6 +11,7 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
   const { closeCart, cartItems } = useShoppingCart();
 
     async function handleCheckout() {
+    console.log("Checkout clicked");
     const res = await fetch("http://localhost:4000/checkout", {
       method: "POST",
       headers: {

@@ -5,6 +5,11 @@
     { "path": "./tsconfig.node.json" }
   ],
   "compilerOptions": {
-    "types": ["node"]
+    "types": ["node"],
+    "target": "ES2020",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true
   }
 }
