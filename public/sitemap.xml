@@ -1,0 +1,3 @@
+User-agent: * 
+Allow: / // Allow all crawlers access to the entire site
+Sitemap: https://yourdomain.com/sitemap.xml // This is the sitemap for the website
