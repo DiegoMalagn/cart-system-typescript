@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Badge, Card, Col, Form, Row } from "react-bootstrap";
 import { Link } from "react-router-dom";
+import design1 from "../assets/designs/stampDesign1.png";
+import design2 from "../assets/designs/stampDesign2.png";
 import {
   customProductMap,
   type CustomProductSlug,
@@ -8,6 +10,12 @@ import {
 
 type ProductCustomizerProps = {
   productType: CustomProductSlug;
+};
+
+type DesignOption = {
+  id: string;
+  label: string;
+  src: string;
 };
 
 const colorOptions = [
@@ -21,9 +29,9 @@ const colorOptions = [
   { label: "White", value: "#ffffff" },
 ];
 
-const designOptions = [
-  "Classic Stamp",
-  // for future: "Vintage Seal","Bold Ink","Minimalist Mark","Distressed Print",
+const AVAILABLE_DESIGNS: DesignOption[] = [
+  { id: "design-1", label: "Design 1", src: design1 },
+  { id: "design-2", label: "Design 2", src: design2 },
 ];
 
 const AVAILABLE_MATERIALS = [
@@ -51,7 +59,6 @@ function drawPreview(
   canvas: HTMLCanvasElement,
   productName: string,
   colorHex: string,
-  designName: string,
   size: string,
   material?: string
 ) {
@@ -166,58 +173,223 @@ function drawPreview(
   context.fill();
   context.stroke();
 
-  context.fillStyle = "rgba(255, 255, 255, 0.86)";
-  context.fillRect(102, 166, 116, 82);
-
-  context.strokeStyle = "rgba(29, 29, 29, 0.5)";
-  context.setLineDash([7, 5]);
-  context.strokeRect(102, 166, 116, 82);
-  context.setLineDash([]);
-
   context.fillStyle = "#1d1d1d";
-  context.textAlign = "center";
-  context.font = "700 18px Arial";
-  context.fillText(designName, width / 2, 198, 96);
-  context.font = "500 12px Arial";
-  context.fillText(size, width / 2, 222);
-
-  if (material) {
-    context.fillText(material, width / 2, 240, 96);
-  }
-
   context.textAlign = "left";
   context.font = "700 14px Arial";
   context.fillText(`${productName} mockup`, 20, 28);
+
+  if (size) {
+    context.font = "500 12px Arial";
+    context.fillText(`Size: ${size}`, 20, 48);
+  }
+
+  if (material) {
+    context.fillText(`Material: ${material}`, 20, 66);
+  }
+}
+
+function getCanvasPoint(
+  canvas: HTMLCanvasElement,
+  clientX: number,
+  clientY: number
+) {
+  const rect = canvas.getBoundingClientRect();
+
+  return {
+    x: ((clientX - rect.left) / rect.width) * canvas.width,
+    y: ((clientY - rect.top) / rect.height) * canvas.height,
+  };
+}
+
+function getDesignDimensions(image: HTMLImageElement, scale: number) {
+  const maxBaseSize = 110;
+  const ratio = Math.min(
+    maxBaseSize / image.naturalWidth,
+    maxBaseSize / image.naturalHeight
+  );
+  const width = image.naturalWidth * ratio * scale;
+  const height = image.naturalHeight * ratio * scale;
+
+  return { width, height };
 }
 
 export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const product = customProductMap[productType];
   const productOptions = PRODUCT_OPTIONS_CONFIG[productType];
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const designTransform = useRef({ x: 150, y: 150, scale: 1 });
+  const dragStateRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+  const activeDesignImageRef = useRef<HTMLImageElement | null>(null);
 
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].label);
   const [selectedSize, setSelectedSize] = useState(AVAILABLE_SIZES[0]);
-  const [selectedDesign, setSelectedDesign] = useState(designOptions[0]);
+  const [selectedDesignId, setSelectedDesignId] = useState(AVAILABLE_DESIGNS[0].id);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
+  const [uploadedDesign, setUploadedDesign] = useState<DesignOption | null>(null);
+
+  const availableDesigns = useMemo(
+    () => (uploadedDesign ? [...AVAILABLE_DESIGNS, uploadedDesign] : AVAILABLE_DESIGNS),
+    [uploadedDesign]
+  );
+
+  const activeDesign = useMemo(
+    () => availableDesigns.find((design) => design.id === selectedDesignId) ?? availableDesigns[0],
+    [availableDesigns, selectedDesignId]
+  );
 
   const selectedColorValue = useMemo(
     () => colorOptions.find((option) => option.label === selectedColor)?.value ?? colorOptions[0].value,
     [selectedColor]
   );
 
-  useEffect(() => {
+  const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
+    const designImage = activeDesignImageRef.current;
+
     if (!canvas) return;
 
     drawPreview(
       canvas,
       product.name,
       selectedColorValue,
-      selectedDesign,
-      selectedSize,
+      productOptions.showSize ? selectedSize : "",
       productOptions.showMaterial ? selectedMaterial : undefined
     );
-  }, [product.name, productOptions.showMaterial, selectedColorValue, selectedDesign, selectedMaterial, selectedSize]);
+
+    if (!designImage) return;
+
+    const context = canvas.getContext("2d");
+
+    if (!context) return;
+
+    const { x, y, scale } = designTransform.current;
+    const { width, height } = getDesignDimensions(designImage, scale);
+
+    context.drawImage(designImage, x - width / 2, y - height / 2, width, height);
+
+    context.strokeStyle = "rgba(33, 37, 41, 0.4)";
+    context.lineWidth = 1.5;
+    context.setLineDash([6, 4]);
+    context.strokeRect(x - width / 2, y - height / 2, width, height);
+    context.setLineDash([]);
+  }, [product.name, productOptions.showMaterial, productOptions.showSize, selectedColorValue, selectedMaterial, selectedSize]);
+
+  useEffect(() => {
+    const image = new Image();
+
+    image.onload = () => {
+      activeDesignImageRef.current = image;
+      redrawCanvas();
+    };
+
+    image.src = activeDesign.src;
+  }, [activeDesign.src, redrawCanvas]);
+
+  useEffect(() => {
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const beginDrag = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+    const designImage = activeDesignImageRef.current;
+
+    if (!canvas || !designImage) return false;
+
+    const point = getCanvasPoint(canvas, clientX, clientY);
+    const { x, y, scale } = designTransform.current;
+    const { width, height } = getDesignDimensions(designImage, scale);
+    const left = x - width / 2;
+    const top = y - height / 2;
+
+    const isInside =
+      point.x >= left &&
+      point.x <= left + width &&
+      point.y >= top &&
+      point.y <= top + height;
+
+    if (!isInside) return false;
+
+    dragStateRef.current = {
+      isDragging: true,
+      offsetX: point.x - x,
+      offsetY: point.y - y,
+    };
+
+    return true;
+  }, []);
+
+  const updateDrag = useCallback((clientX: number, clientY: number) => {
+    const canvas = canvasRef.current;
+
+    if (!canvas || !dragStateRef.current.isDragging) return;
+
+    const point = getCanvasPoint(canvas, clientX, clientY);
+
+    designTransform.current.x = point.x - dragStateRef.current.offsetX;
+    designTransform.current.y = point.y - dragStateRef.current.offsetY;
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const stopDrag = useCallback(() => {
+    dragStateRef.current.isDragging = false;
+  }, []);
+
+  const resetPosition = useCallback(() => {
+    const canvas = canvasRef.current;
+
+    if (!canvas) return;
+
+    designTransform.current = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      scale: 1,
+    };
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const handleScaleChange = useCallback((delta: number) => {
+    designTransform.current.scale = Math.min(
+      3,
+      Math.max(0.2, Number((designTransform.current.scale + delta).toFixed(2)))
+    );
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const handleUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+
+    if (!file || file.type !== "image/png") return;
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result;
+
+      if (typeof result !== "string") return;
+
+      const uploadedImage = new Image();
+      uploadedImage.onload = () => {
+        const customDesign = {
+          id: "custom-upload",
+          label: "My Design",
+          src: result,
+        };
+
+        // TODO: Upload this PNG to backend storage (for example S3 or Supabase) and attach the stored URL to the order at checkout.
+        activeDesignImageRef.current = uploadedImage;
+        setUploadedDesign(customDesign);
+        setSelectedDesignId(customDesign.id);
+        designTransform.current = {
+          x: 160,
+          y: 210,
+          scale: 1,
+        };
+      };
+      uploadedImage.src = result;
+    };
+
+    reader.readAsDataURL(file);
+  }, []);
 
   return (
     <div className="py-2">
@@ -297,15 +469,50 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 </Form.Group>
               ) : null}
 
-              <Form.Group className="mb-3">
+              <Form.Group className="mb-4">
                 <Form.Label>Design</Form.Label>
-                <Form.Select value={selectedDesign} onChange={(event) => setSelectedDesign(event.target.value)}>
-                  {designOptions.map((design) => (
-                    <option key={design} value={design}>
-                      {design}
-                    </option>
-                  ))}
-                </Form.Select>
+                <div className="d-flex gap-2 overflow-auto pb-1">
+                  {availableDesigns.map((design) => {
+                    const isSelected = selectedDesignId === design.id;
+
+                    return (
+                      <button
+                        key={design.id}
+                        type="button"
+                        onClick={() => setSelectedDesignId(design.id)}
+                        className="btn p-2 text-center"
+                        style={{
+                          minWidth: "104px",
+                          borderRadius: "12px",
+                          border: isSelected ? "2px solid #212529" : "1px solid #d6d6d6",
+                          backgroundColor: "#ffffff",
+                          boxShadow: isSelected ? "0 0 0 2px rgba(33, 37, 41, 0.12)" : "none",
+                        }}
+                      >
+                        <img
+                          src={design.src}
+                          alt={design.label}
+                          style={{
+                            width: "80px",
+                            height: "80px",
+                            objectFit: "contain",
+                            display: "block",
+                            margin: "0 auto 0.5rem",
+                          }}
+                        />
+                        <span className="small fw-semibold d-block">{design.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>Upload your own design</Form.Label>
+                <Form.Control type="file" accept="image/png" onChange={handleUpload} />
+                <Form.Text className="text-secondary">
+                  PNG only. Uploaded designs stay available while this page remains open.
+                </Form.Text>
               </Form.Group>
 
               {productOptions.showMaterial ? (
@@ -326,7 +533,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 <div className="d-flex flex-wrap gap-2">
                   {productOptions.showColor ? <Badge bg="dark">{selectedColor}</Badge> : null}
                   {productOptions.showSize ? <Badge bg="secondary">{selectedSize}</Badge> : null}
-                  <Badge bg="warning" text="dark">{selectedDesign}</Badge>
+                  <Badge bg="warning" text="dark">{activeDesign.label}</Badge>
                   {productOptions.showMaterial ? <Badge bg="success">{selectedMaterial}</Badge> : null}
                 </div>
               </div>
@@ -341,12 +548,38 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 <div>
                   <h2 className="h5 fw-bold mb-1">Mockup Preview</h2>
                   <p className="text-secondary mb-0">
-                    Canvas preview updates live as you change options.
+                    Drag the design on the canvas to position it.
                   </p>
                 </div>
                 <Badge bg="light" text="dark">
                   {product.tagline}
                 </Badge>
+              </div>
+
+              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                <div className="d-flex gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark btn-sm"
+                    onClick={() => handleScaleChange(-0.1)}
+                  >
+                    Smaller
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-dark btn-sm"
+                    onClick={() => handleScaleChange(0.1)}
+                  >
+                    Larger
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-link btn-sm text-decoration-none px-0"
+                  onClick={resetPosition}
+                >
+                  Reset position
+                </button>
               </div>
 
               <div className="customizer-canvas-shell">
@@ -355,7 +588,35 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                   width={320}
                   height={420}
                   className="w-100"
-                  style={{ maxWidth: "420px", display: "block", margin: "0 auto" }}
+                  style={{ maxWidth: "420px", display: "block", margin: "0 auto", touchAction: "none", cursor: "grab" }}
+                  onMouseDown={(event) => {
+                    if (beginDrag(event.clientX, event.clientY)) {
+                      event.currentTarget.style.cursor = "grabbing";
+                    }
+                  }}
+                  onMouseMove={(event) => updateDrag(event.clientX, event.clientY)}
+                  onMouseUp={(event) => {
+                    stopDrag();
+                    event.currentTarget.style.cursor = "grab";
+                  }}
+                  onMouseLeave={(event) => {
+                    stopDrag();
+                    event.currentTarget.style.cursor = "grab";
+                  }}
+                  onTouchStart={(event) => {
+                    const touch = event.touches[0];
+                    if (!touch) return;
+                    if (beginDrag(touch.clientX, touch.clientY)) {
+                      event.preventDefault();
+                    }
+                  }}
+                  onTouchMove={(event) => {
+                    const touch = event.touches[0];
+                    if (!touch) return;
+                    event.preventDefault();
+                    updateDrag(touch.clientX, touch.clientY);
+                  }}
+                  onTouchEnd={() => stopDrag()}
                 />
               </div>
             </Card.Body>
