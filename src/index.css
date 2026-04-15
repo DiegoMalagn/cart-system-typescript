@@ -139,6 +139,14 @@
   }
 }
 
+.customizer-canvas-shell {
+  border-radius: 18px;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at top, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.35)),
+    linear-gradient(135deg, #e9dfd2, #f8f5ef);
+}
+
 .add-to-cart {
   background-color: #28a745;
   color: white;

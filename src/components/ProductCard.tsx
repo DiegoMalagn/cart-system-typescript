@@ -1,25 +1,48 @@
+import { Card } from "react-bootstrap";
 import { Link } from "react-router-dom";
 
-type Product = {
-  id: number;
+export type ProductCardProduct = {
+  id?: number;
   name: string;
-  price: number;
+  price?: number;
   imageUrl: string;
+  tagline?: string;
+  href?: string;
+  ctaLabel?: string;
 };
 
-export function ProductCard({ product }: { product: Product }) {
+export function ProductCard({ product }: { product: ProductCardProduct }) {
+  const href = product.href ?? (product.id ? `/product/${product.id}` : "#");
+  const ctaLabel = product.ctaLabel ?? (product.id ? "View Product" : "Customize");
+
   return (
-    <Link to={`/product/${product.id}`} style={{ textDecoration: "none", color: "inherit" }}>
-      <div className="product-card">
-
-        <div className="image-container">
-          <img src={product.imageUrl} alt={product.name} />
-        </div>
-
-        <h3>{product.name}</h3>
-        <p>${product.price}</p>
-
+    <Card className="h-100 shadow-sm border-0 product-card">
+      <div className="image-container">
+        <Card.Img
+          variant="top"
+          src={product.imageUrl}
+          alt={product.name}
+          height="240"
+          style={{ objectFit: "cover", width: "100%" }}
+          className="product-image"
+        />
       </div>
-    </Link>
+
+      <Card.Body className="d-flex flex-column">
+        <Card.Title className="fs-5">{product.name}</Card.Title>
+
+        {product.tagline ? (
+          <Card.Text className="text-secondary small">{product.tagline}</Card.Text>
+        ) : null}
+
+        {typeof product.price === "number" ? (
+          <Card.Text className="fw-semibold mb-3">${product.price}</Card.Text>
+        ) : null}
+
+        <Link to={href} className="btn btn-dark mt-auto">
+          {ctaLabel}
+        </Link>
+      </Card.Body>
+    </Card>
   );
 }
