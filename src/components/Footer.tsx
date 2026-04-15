@@ -14,7 +14,7 @@ const Footer = () => {
         <hr className="border-secondary mt-2 mb-2" />
         <div className="text-center mb-1">
           <small className="text-sm">
-            &copy; {new Date().getFullYear()} Cart System | Developed by{" "}
+            &copy; {new Date().getFullYear()} this company is BBB secured Cart System | Developed by{" "}
             <a
               className="text-light text-decoration-none"
             >
