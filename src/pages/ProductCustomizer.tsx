@@ -225,8 +225,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const { increaseCartQuantity } = useShoppingCart();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const designTransform = useRef({
-    x: 150,
-    y: 150,
+    x: 210,
+    y: 210,
     scale: 1,
     rotationDeg: 0,
   });
@@ -237,7 +237,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const [selectedSize, setSelectedSize] = useState(AVAILABLE_SIZES[0]);
   const [selectedDesignId, setSelectedDesignId] = useState(AVAILABLE_DESIGNS[0].id);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
-  const [uploadedDesign, setUploadedDesign] = useState<DesignOption | null>(null);
+  const [uploadedDesigns, setUploadedDesigns] = useState<DesignOption[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
@@ -245,8 +245,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const availableDesigns = useMemo(
-    () => (uploadedDesign ? [...AVAILABLE_DESIGNS, uploadedDesign] : AVAILABLE_DESIGNS),
-    [uploadedDesign]
+    () => [...AVAILABLE_DESIGNS, ...uploadedDesigns],
+    [uploadedDesigns]
   );
 
   const activeDesign = useMemo(
@@ -416,29 +416,32 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       });
 
       if (!res.ok) {
-        throw new Error("Upload failed");
+        const data = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(data.error ?? "Upload failed — please try a PNG under 20MB");
       }
 
       const data = (await res.json()) as { url: string };
       const customDesign: DesignOption = {
-        id: "custom-upload",
+        id: `custom-upload-${Date.now()}`,
         label: "My Design",
         sourceType: "upload",
         imageUrl: data.url,
       };
 
-      setUploadedDesign(customDesign);
+      setUploadedDesigns((prev) => [...prev, customDesign]);
       setSelectedDesignId(customDesign.id);
       designTransform.current = {
-        x: 160,
-        y: 210,
+        x: 210,
+        y: 260,
         scale: 1,
         rotationDeg: 0,
       };
       setScaleValue(1);
       setRotationValue(0);
-    } catch {
-      setUploadError("Upload failed — please try a PNG under 20MB");
+    } catch (err) {
+      setUploadError(
+        err instanceof Error ? err.message : "Upload failed — please try a PNG under 20MB"
+      );
       event.target.value = "";
     } finally {
       setIsUploading(false);
@@ -723,8 +726,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
               <div className="customizer-canvas-shell">
                 <canvas
                   ref={canvasRef}
-                  width={320}
-                  height={420}
+                  width={420}
+                  height={520}
                   className="w-100"
                   style={{ maxWidth: "420px", display: "block", margin: "0 auto", touchAction: "none", cursor: "grab" }}
                   onMouseDown={(event) => {

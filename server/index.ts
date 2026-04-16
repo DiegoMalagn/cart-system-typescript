@@ -39,6 +39,13 @@ const upload = multer({
   limits: {
     fileSize: 20 * 1024 * 1024,
   },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== "image/png") {
+      cb(new Error("PNG_ONLY"));
+    } else {
+      cb(null, true);
+    }
+  },
 });
 
 // ✅ Stripe init
@@ -110,7 +117,10 @@ app.post(
 /* =========================================================
     BODY PARSER (AFTER webhook)
 ========================================================= */
-app.use(express.json());
+app.use((req, res, next) => {
+  if (req.path === "/api/upload-design") return next();
+  express.json()(req, res, next);
+});
 
 /* =========================================================
     MONGOOSE MODEL
@@ -140,15 +150,7 @@ app.post("/api/upload-design", upload.single("file"), async (req, res) => {
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ error: "Upload failed: PNG file is required" });
-    }
-
-    if (file.mimetype !== "image/png") {
-      return res.status(400).json({ error: "Upload failed: file must be image/png" });
-    }
-
-    if (file.size >= 20 * 1024 * 1024) {
-      return res.status(400).json({ error: "Upload failed: file must be under 20MB" });
+      return res.status(400).json({ error: "No file received" });
     }
 
     if (!process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL || !process.env.R2_ENDPOINT) {
@@ -174,6 +176,16 @@ app.post("/api/upload-design", upload.single("file"), async (req, res) => {
     console.error("Upload failed", error);
     return res.status(500).json({ error: error?.message || "Upload failed" });
   }
+});
+
+app.use("/api/upload-design", (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  if (err?.code === "LIMIT_FILE_SIZE") {
+    return res.status(400).json({ error: "File too large — maximum size is 20MB" });
+  }
+  if (err?.message === "PNG_ONLY") {
+    return res.status(400).json({ error: "Only PNG files are accepted" });
+  }
+  return res.status(500).json({ error: "Upload failed" });
 });
 
 /* =========================================================
