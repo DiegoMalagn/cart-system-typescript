@@ -4,8 +4,16 @@ import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import multer from "multer";
-import { randomUUID } from "crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import crypto from "crypto";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { r2 } from "./src/lib/r2Client";
+
+// Required environment variables (set in Railway dashboard and /server/.env):
+// R2_ENDPOINT      — https://<accountid>.r2.cloudflarestorage.com
+// R2_ACCESS_KEY_ID — from Cloudflare R2 API token
+// R2_SECRET_ACCESS_KEY — from Cloudflare R2 API token
+// R2_BUCKET_NAME   — e.g. stamplabprints-designs
+// R2_PUBLIC_URL    — public base URL e.g. https://pub-xxxx.r2.dev
 
 dotenv.config();
 
@@ -30,15 +38,6 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 20 * 1024 * 1024,
-  },
-});
-
-const r2Client = new S3Client({
-  region: "auto",
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
   },
 });
 
@@ -141,36 +140,39 @@ app.post("/api/upload-design", upload.single("file"), async (req, res) => {
     const file = req.file;
 
     if (!file) {
-      return res.status(400).json({ error: "File is required" });
+      return res.status(400).json({ error: "Upload failed: PNG file is required" });
     }
 
     if (file.mimetype !== "image/png") {
-      return res.status(400).json({ error: "Only PNG uploads are allowed" });
+      return res.status(400).json({ error: "Upload failed: file must be image/png" });
     }
 
-    if (!process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) {
+    if (file.size >= 20 * 1024 * 1024) {
+      return res.status(400).json({ error: "Upload failed: file must be under 20MB" });
+    }
+
+    if (!process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL || !process.env.R2_ENDPOINT) {
       return res.status(500).json({ error: "R2 storage is not configured" });
     }
 
-    // Add these vars to Railway environment variables
-    // and to .env.local for local development. Never commit them.
-    const objectKey = `design-uploads/${randomUUID()}.png`;
+    const key = `designs/${Date.now()}-${crypto.randomUUID()}.png`;
 
-    await r2Client.send(
+    await r2.send(
       new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
-        Key: objectKey,
+        Key: key,
         Body: file.buffer,
         ContentType: "image/png",
+        CacheControl: "public, max-age=31536000",
       })
     );
 
     return res.json({
-      url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${objectKey}`,
+      url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${key}`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Upload failed", error);
-    return res.status(500).json({ error: "Upload failed" });
+    return res.status(500).json({ error: error?.message || "Upload failed" });
   }
 });
 

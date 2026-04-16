@@ -238,9 +238,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const [selectedDesignId, setSelectedDesignId] = useState(AVAILABLE_DESIGNS[0].id);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
   const [uploadedDesign, setUploadedDesign] = useState<DesignOption | null>(null);
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [isUploadingDesign, setIsUploadingDesign] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [scaleValue, setScaleValue] = useState(1);
   const [rotationValue, setRotationValue] = useState(0);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -404,60 +403,46 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     if (!file || file.type !== "image/png") return;
 
-    const API_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
-    const reader = new FileReader();
-
     setUploadError(null);
-    setIsUploadingDesign(true);
+    setIsUploading(true);
 
-    reader.onload = async () => {
-      const previewResult = reader.result;
+    try {
+      const form = new FormData();
+      form.append("file", file);
 
-      if (typeof previewResult === "string") {
-        setUploadPreview(previewResult);
+      const res = await fetch("/api/upload-design", {
+        method: "POST",
+        body: form,
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
       }
 
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
+      const data = (await res.json()) as { url: string };
+      const customDesign: DesignOption = {
+        id: "custom-upload",
+        label: "My Design",
+        sourceType: "upload",
+        imageUrl: data.url,
+      };
 
-        const response = await fetch(`${API_URL.replace(/\/$/, "")}/api/upload-design`, {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Upload failed");
-        }
-
-        const data = (await response.json()) as { url: string };
-        const customDesign: DesignOption = {
-          id: "custom-upload",
-          label: "My Design",
-          sourceType: "upload",
-          imageUrl: data.url,
-        };
-
-        setUploadedDesign(customDesign);
-        setSelectedDesignId(customDesign.id);
-        setUploadPreview(null);
-        designTransform.current = {
-          x: 160,
-          y: 210,
-          scale: 1,
-          rotationDeg: 0,
-        };
-        setScaleValue(1);
-        setRotationValue(0);
-      } catch {
-        setUploadError("PNG upload failed. Please try again.");
-        setUploadPreview(null);
-      } finally {
-        setIsUploadingDesign(false);
-      }
-    };
-
-    reader.readAsDataURL(file);
+      setUploadedDesign(customDesign);
+      setSelectedDesignId(customDesign.id);
+      designTransform.current = {
+        x: 160,
+        y: 210,
+        scale: 1,
+        rotationDeg: 0,
+      };
+      setScaleValue(1);
+      setRotationValue(0);
+    } catch {
+      setUploadError("Upload failed — please try a PNG under 20MB");
+      event.target.value = "";
+    } finally {
+      setIsUploading(false);
+    }
   }, []);
 
   const handleAddToCart = useCallback(() => {
@@ -470,6 +455,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
         id: activeDesign.id,
         label: activeDesign.label,
         sourceType: activeDesign.sourceType,
+        // imageUrl is the permanent reference to the customer's chosen design.
+        // At fulfillment, fetch this URL to retrieve the PNG for gang sheet layout.
         imageUrl: activeDesign.imageUrl,
       },
       transform: { ...designTransform.current },
@@ -611,16 +598,11 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                       </button>
                     );
                   })}
-                  {isUploadingDesign && uploadPreview ? (
+                  {isUploading ? (
                     <div
                       className="d-flex flex-column align-items-center justify-content-center p-2 text-center border rounded-3 bg-white"
                       style={{ minWidth: "104px" }}
                     >
-                      <img
-                        src={uploadPreview}
-                        alt="Uploading design preview"
-                        style={{ width: "80px", height: "80px", objectFit: "contain", opacity: 0.55 }}
-                      />
                       <div className="d-flex align-items-center gap-2 small fw-semibold">
                         <Spinner animation="border" size="sm" />
                         Uploading
@@ -780,9 +762,9 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 type="button"
                 className="btn btn-success btn-lg w-100 mt-3"
                 onClick={handleAddToCart}
-                disabled={isUploadingDesign || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
+                disabled={isUploading || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
               >
-                {isUploadingDesign ? (
+                {isUploading ? (
                   <>
                     <Spinner animation="border" size="sm" className="me-2" />
                     Uploading design...
