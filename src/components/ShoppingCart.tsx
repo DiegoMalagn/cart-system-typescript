@@ -2,6 +2,7 @@ import { Offcanvas, Stack, Button } from "react-bootstrap";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { CartItem } from "./CartItem";
 import items from "../data/items.json";
+import { customProductMap } from "../data/customProducts";
 
 type ShoppingCartProps = {
   isOpen: boolean;
@@ -22,7 +23,9 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
       },
       body: JSON.stringify({
         items: cartItems.map(item => {
-          const product = items.find(i => i.id === item.id);
+          const product = item.customization
+            ? customProductMap[item.customization.productType as keyof typeof customProductMap]
+            : items.find(i => i.id === item.id);
 
           return {
             id: item.id,
@@ -30,6 +33,7 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
             price: product?.price,
             size: item.size,
             quantity: item.quantity,
+            customization: item.customization,
           };
         }),
       }),
@@ -57,10 +61,8 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
         {cartItems.length === 0 && <div>Your cart is empty</div>}
         {cartItems.map((item) => (
           <CartItem
-            key={`${item.id}-${item.size}`}
-            id={item.id}
-            size={item.size}
-            quantity={item.quantity}
+            key={`${item.id}-${item.size}-${item.customization ? JSON.stringify(item.customization) : "base-item"}`}
+            item={item}
           />
         ))}
       </Stack>

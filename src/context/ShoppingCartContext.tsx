@@ -6,10 +6,32 @@ type ShoppingCartProviderProps = {
   children: ReactNode;
 };
 
-type CartItem = {
+export type CartItemCustomization = {
+  productType: string;
+  color?: string;
+  size?: string;
+  material?: string;
+  design: {
+    id: string;
+    label: string;
+    sourceType: "preset" | "upload";
+    imageUrl: string;
+  };
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+    rotationDeg: number;
+  };
+};
+
+export type CartItem = {
   id: number;
   size: string;
   quantity: number;
+  // TODO: when order is placed, backend should persist imageUrl to the order
+  // record so the PNG can be retrieved for DTF gang sheet fulfillment.
+  customization?: CartItemCustomization;
 };
 
 type ShoppingCartContext = {
@@ -17,13 +39,25 @@ type ShoppingCartContext = {
   cartItems: CartItem[];
   openCart: () => void;
   closeCart: () => void;
-getItemQuantity: (id: number, size: string) => number;
-increaseCartQuantity: (id: number, size: string) => void;
-decreaseCartQuantity: (id: number, size: string) => void;
-removeFromCart: (id: number, size: string) => void;
+getItemQuantity: (id: number, size: string, customization?: CartItemCustomization) => number;
+increaseCartQuantity: (id: number, size: string, customization?: CartItemCustomization) => void;
+decreaseCartQuantity: (id: number, size: string, customization?: CartItemCustomization) => void;
+removeFromCart: (id: number, size: string, customization?: CartItemCustomization) => void;
 };
 
 const ShoppingCartContext = createContext({} as ShoppingCartContext);
+
+function getCustomizationKey(customization?: CartItemCustomization) {
+  return customization ? JSON.stringify(customization) : "base-item";
+}
+
+function isMatchingCartItem(item: CartItem, id: number, size: string, customization?: CartItemCustomization) {
+  return (
+    item.id === id &&
+    item.size === size &&
+    getCustomizationKey(item.customization) === getCustomizationKey(customization)
+  );
+}
 
 export function useShoppingCart() {
   return useContext(ShoppingCartContext);
@@ -41,51 +75,51 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
 
-  function getItemQuantity(id: number, size: string) {
-    return cartItems.find(item => item.id === id && item.size === size)?.quantity || 0;
+  function getItemQuantity(id: number, size: string, customization?: CartItemCustomization) {
+    return cartItems.find(item => isMatchingCartItem(item, id, size, customization))?.quantity || 0;
   }
 
-  function increaseCartQuantity(id: number, size: string) {
+  function increaseCartQuantity(id: number, size: string, customization?: CartItemCustomization) {
   setCartItems(currItems => {
     const existing = currItems.find(
-      item => item.id === id && item.size === size
+      item => isMatchingCartItem(item, id, size, customization)
     );
 
     if (!existing) {
-      return [...currItems, { id, size, quantity: 1 }];
+      return [...currItems, { id, size, quantity: 1, customization }];
     }
 
     return currItems.map(item =>
-      item.id === id && item.size === size
+      isMatchingCartItem(item, id, size, customization)
         ? { ...item, quantity: item.quantity + 1 }
         : item
     );
   });
 }
 
-  function decreaseCartQuantity(id: number, size: string) {
+  function decreaseCartQuantity(id: number, size: string, customization?: CartItemCustomization) {
   setCartItems(currItems => {
     const existing = currItems.find(
-      item => item.id === id && item.size === size
+      item => isMatchingCartItem(item, id, size, customization)
     );
 
     if (existing?.quantity === 1) {
       return currItems.filter(
-        item => !(item.id === id && item.size === size)
+        item => !isMatchingCartItem(item, id, size, customization)
       );
     }
 
     return currItems.map(item =>
-      item.id === id && item.size === size
+      isMatchingCartItem(item, id, size, customization)
         ? { ...item, quantity: item.quantity - 1 }
         : item
     );
   });
 }
 
-  function removeFromCart(id: number, size: string) {
+  function removeFromCart(id: number, size: string, customization?: CartItemCustomization) {
   setCartItems(currItems =>
-    currItems.filter(item => !(item.id === id && item.size === size))
+    currItems.filter(item => !isMatchingCartItem(item, id, size, customization))
   );
 }
 

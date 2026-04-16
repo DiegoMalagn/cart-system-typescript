@@ -3,6 +3,9 @@ import Stripe from "stripe";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import multer from "multer";
+import { randomUUID } from "crypto";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
 dotenv.config();
 
@@ -23,6 +26,21 @@ const PORT: number = (() => {
 })();
 
 const app = express();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 20 * 1024 * 1024,
+  },
+});
+
+const r2Client = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
+  },
+});
 
 // ✅ Stripe init
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
@@ -118,6 +136,44 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
+app.post("/api/upload-design", upload.single("file"), async (req, res) => {
+  try {
+    const file = req.file;
+
+    if (!file) {
+      return res.status(400).json({ error: "File is required" });
+    }
+
+    if (file.mimetype !== "image/png") {
+      return res.status(400).json({ error: "Only PNG uploads are allowed" });
+    }
+
+    if (!process.env.R2_BUCKET_NAME || !process.env.R2_PUBLIC_URL) {
+      return res.status(500).json({ error: "R2 storage is not configured" });
+    }
+
+    // Add these vars to Railway environment variables
+    // and to .env.local for local development. Never commit them.
+    const objectKey = `design-uploads/${randomUUID()}.png`;
+
+    await r2Client.send(
+      new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: objectKey,
+        Body: file.buffer,
+        ContentType: "image/png",
+      })
+    );
+
+    return res.json({
+      url: `${process.env.R2_PUBLIC_URL.replace(/\/$/, "")}/${objectKey}`,
+    });
+  } catch (error) {
+    console.error("Upload failed", error);
+    return res.status(500).json({ error: "Upload failed" });
+  }
+});
+
 /* =========================================================
     CHECKOUT
 ========================================================= */
@@ -132,7 +188,7 @@ app.post("/checkout", async (req, res) => {
         price_data: {
           currency: "usd",
           product_data: {
-            name: `${item.name} (Size: ${item.size})`,
+            name: item.size ? `${item.name} (Size: ${item.size})` : item.name,
           },
           unit_amount: item.price * 100,
         },

@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { Badge, Card, Col, Form, Row } from "react-bootstrap";
+import { Alert, Badge, Card, Col, Form, Row, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import design1 from "../assets/designs/stampDesign1.png";
 import design2 from "../assets/designs/stampDesign2.png";
+import {
+  type CartItemCustomization,
+  useShoppingCart,
+} from "../context/ShoppingCartContext";
 import {
   customProductMap,
   type CustomProductSlug,
@@ -15,7 +19,8 @@ type ProductCustomizerProps = {
 type DesignOption = {
   id: string;
   label: string;
-  src: string;
+  sourceType: "preset" | "upload";
+  imageUrl: string;
 };
 
 const colorOptions = [
@@ -30,8 +35,8 @@ const colorOptions = [
 ];
 
 const AVAILABLE_DESIGNS: DesignOption[] = [
-  { id: "design-1", label: "Design 1", src: design1 },
-  { id: "design-2", label: "Design 2", src: design2 },
+  { id: "design-1", label: "Design 1", sourceType: "preset", imageUrl: design1 },
+  { id: "design-2", label: "Design 2", sourceType: "preset", imageUrl: design2 },
 ];
 
 const AVAILABLE_MATERIALS = [
@@ -55,7 +60,7 @@ const PRODUCT_OPTIONS_CONFIG: Record<
   totebag: { showColor: false, showSize: false, showMaterial: false },
 };
 
-function drawPreview(
+function drawBaseProduct(
   canvas: HTMLCanvasElement,
   productName: string,
   colorHex: string,
@@ -207,17 +212,24 @@ function getDesignDimensions(image: HTMLImageElement, scale: number) {
     maxBaseSize / image.naturalWidth,
     maxBaseSize / image.naturalHeight
   );
-  const width = image.naturalWidth * ratio * scale;
-  const height = image.naturalHeight * ratio * scale;
 
-  return { width, height };
+  return {
+    width: image.naturalWidth * ratio * scale,
+    height: image.naturalHeight * ratio * scale,
+  };
 }
 
 export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const product = customProductMap[productType];
   const productOptions = PRODUCT_OPTIONS_CONFIG[productType];
+  const { increaseCartQuantity } = useShoppingCart();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const designTransform = useRef({ x: 150, y: 150, scale: 1 });
+  const designTransform = useRef({
+    x: 150,
+    y: 150,
+    scale: 1,
+    rotationDeg: 0,
+  });
   const dragStateRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
   const activeDesignImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -226,6 +238,12 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const [selectedDesignId, setSelectedDesignId] = useState(AVAILABLE_DESIGNS[0].id);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
   const [uploadedDesign, setUploadedDesign] = useState<DesignOption | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploadingDesign, setIsUploadingDesign] = useState(false);
+  const [scaleValue, setScaleValue] = useState(1);
+  const [rotationValue, setRotationValue] = useState(0);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
   const availableDesigns = useMemo(
     () => (uploadedDesign ? [...AVAILABLE_DESIGNS, uploadedDesign] : AVAILABLE_DESIGNS),
@@ -248,7 +266,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     if (!canvas) return;
 
-    drawPreview(
+    drawBaseProduct(
       canvas,
       product.name,
       selectedColorValue,
@@ -262,28 +280,32 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     if (!context) return;
 
-    const { x, y, scale } = designTransform.current;
+    const { x, y, scale, rotationDeg } = designTransform.current;
     const { width, height } = getDesignDimensions(designImage, scale);
 
-    context.drawImage(designImage, x - width / 2, y - height / 2, width, height);
-
+    context.save();
+    context.translate(x, y);
+    context.rotate((rotationDeg * Math.PI) / 180);
+    context.drawImage(designImage, -width / 2, -height / 2, width, height);
     context.strokeStyle = "rgba(33, 37, 41, 0.4)";
     context.lineWidth = 1.5;
     context.setLineDash([6, 4]);
-    context.strokeRect(x - width / 2, y - height / 2, width, height);
+    context.strokeRect(-width / 2, -height / 2, width, height);
     context.setLineDash([]);
+    context.restore();
   }, [product.name, productOptions.showMaterial, productOptions.showSize, selectedColorValue, selectedMaterial, selectedSize]);
 
   useEffect(() => {
     const image = new Image();
+    image.crossOrigin = "anonymous";
 
     image.onload = () => {
       activeDesignImageRef.current = image;
       redrawCanvas();
     };
 
-    image.src = activeDesign.src;
-  }, [activeDesign.src, redrawCanvas]);
+    image.src = activeDesign.imageUrl;
+  }, [activeDesign.imageUrl, redrawCanvas]);
 
   useEffect(() => {
     redrawCanvas();
@@ -301,13 +323,14 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     const left = x - width / 2;
     const top = y - height / 2;
 
-    const isInside =
-      point.x >= left &&
-      point.x <= left + width &&
-      point.y >= top &&
-      point.y <= top + height;
-
-    if (!isInside) return false;
+    if (
+      point.x < left ||
+      point.x > left + width ||
+      point.y < top ||
+      point.y > top + height
+    ) {
+      return false;
+    }
 
     dragStateRef.current = {
       isDragging: true,
@@ -324,7 +347,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     if (!canvas || !dragStateRef.current.isDragging) return;
 
     const point = getCanvasPoint(canvas, clientX, clientY);
-
     designTransform.current.x = point.x - dragStateRef.current.offsetX;
     designTransform.current.y = point.y - dragStateRef.current.offsetY;
     redrawCanvas();
@@ -343,53 +365,138 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       x: canvas.width / 2,
       y: canvas.height / 2,
       scale: 1,
+      rotationDeg: 0,
     };
+    setScaleValue(1);
+    setRotationValue(0);
     redrawCanvas();
   }, [redrawCanvas]);
 
-  const handleScaleChange = useCallback((delta: number) => {
-    designTransform.current.scale = Math.min(
+  const handleScaleButton = useCallback((delta: number) => {
+    const nextScale = Math.min(
       3,
       Math.max(0.2, Number((designTransform.current.scale + delta).toFixed(2)))
     );
+
+    designTransform.current.scale = nextScale;
+    setScaleValue(nextScale);
     redrawCanvas();
   }, [redrawCanvas]);
 
-  const handleUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+  const handleScaleSliderChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const nextScale = Number(event.target.value);
+
+    designTransform.current.scale = nextScale;
+    setScaleValue(nextScale);
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const handleRotationChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const nextRotation = Number(event.target.value);
+
+    designTransform.current.rotationDeg = nextRotation;
+    setRotationValue(nextRotation);
+    redrawCanvas();
+  }, [redrawCanvas]);
+
+  const handleUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
 
     if (!file || file.type !== "image/png") return;
 
+    const API_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
     const reader = new FileReader();
 
-    reader.onload = () => {
-      const result = reader.result;
+    setUploadError(null);
+    setIsUploadingDesign(true);
 
-      if (typeof result !== "string") return;
+    reader.onload = async () => {
+      const previewResult = reader.result;
 
-      const uploadedImage = new Image();
-      uploadedImage.onload = () => {
-        const customDesign = {
+      if (typeof previewResult === "string") {
+        setUploadPreview(previewResult);
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch(`${API_URL.replace(/\/$/, "")}/api/upload-design`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Upload failed");
+        }
+
+        const data = (await response.json()) as { url: string };
+        const customDesign: DesignOption = {
           id: "custom-upload",
           label: "My Design",
-          src: result,
+          sourceType: "upload",
+          imageUrl: data.url,
         };
 
-        // TODO: Upload this PNG to backend storage (for example S3 or Supabase) and attach the stored URL to the order at checkout.
-        activeDesignImageRef.current = uploadedImage;
         setUploadedDesign(customDesign);
         setSelectedDesignId(customDesign.id);
+        setUploadPreview(null);
         designTransform.current = {
           x: 160,
           y: 210,
           scale: 1,
+          rotationDeg: 0,
         };
-      };
-      uploadedImage.src = result;
+        setScaleValue(1);
+        setRotationValue(0);
+      } catch {
+        setUploadError("PNG upload failed. Please try again.");
+        setUploadPreview(null);
+      } finally {
+        setIsUploadingDesign(false);
+      }
     };
 
     reader.readAsDataURL(file);
   }, []);
+
+  const handleAddToCart = useCallback(() => {
+    const customization: CartItemCustomization = {
+      productType,
+      color: productOptions.showColor ? selectedColor : undefined,
+      size: productOptions.showSize ? selectedSize : undefined,
+      material: productOptions.showMaterial ? selectedMaterial : undefined,
+      design: {
+        id: activeDesign.id,
+        label: activeDesign.label,
+        sourceType: activeDesign.sourceType,
+        imageUrl: activeDesign.imageUrl,
+      },
+      transform: { ...designTransform.current },
+    };
+
+    increaseCartQuantity(
+      product.id,
+      productOptions.showSize ? selectedSize : "",
+      customization
+    );
+    setSaveMessage("Added to cart");
+    window.setTimeout(() => setSaveMessage(null), 2500);
+  }, [
+    activeDesign.id,
+    activeDesign.imageUrl,
+    activeDesign.label,
+    activeDesign.sourceType,
+    increaseCartQuantity,
+    product.id,
+    productOptions.showColor,
+    productOptions.showMaterial,
+    productOptions.showSize,
+    productType,
+    selectedColor,
+    selectedMaterial,
+    selectedSize,
+  ]);
 
   return (
     <div className="py-2">
@@ -490,7 +597,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                         }}
                       >
                         <img
-                          src={design.src}
+                          src={design.imageUrl}
                           alt={design.label}
                           style={{
                             width: "80px",
@@ -504,6 +611,22 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                       </button>
                     );
                   })}
+                  {isUploadingDesign && uploadPreview ? (
+                    <div
+                      className="d-flex flex-column align-items-center justify-content-center p-2 text-center border rounded-3 bg-white"
+                      style={{ minWidth: "104px" }}
+                    >
+                      <img
+                        src={uploadPreview}
+                        alt="Uploading design preview"
+                        style={{ width: "80px", height: "80px", objectFit: "contain", opacity: 0.55 }}
+                      />
+                      <div className="d-flex align-items-center gap-2 small fw-semibold">
+                        <Spinner animation="border" size="sm" />
+                        Uploading
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </Form.Group>
 
@@ -513,6 +636,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 <Form.Text className="text-secondary">
                   PNG only. Uploaded designs stay available while this page remains open.
                 </Form.Text>
+                {uploadError ? <div className="text-danger small mt-2">{uploadError}</div> : null}
               </Form.Group>
 
               {productOptions.showMaterial ? (
@@ -537,6 +661,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                   {productOptions.showMaterial ? <Badge bg="success">{selectedMaterial}</Badge> : null}
                 </div>
               </div>
+
+              {saveMessage ? <Alert variant="success" className="mt-3 mb-0 py-2">{saveMessage}</Alert> : null}
             </Card.Body>
           </Card>
         </Col>
@@ -548,7 +674,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 <div>
                   <h2 className="h5 fw-bold mb-1">Mockup Preview</h2>
                   <p className="text-secondary mb-0">
-                    Drag the design on the canvas to position it.
+                    Drag the design on the canvas to position and rotate it.
                   </p>
                 </div>
                 <Badge bg="light" text="dark">
@@ -561,14 +687,14 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                   <button
                     type="button"
                     className="btn btn-outline-dark btn-sm"
-                    onClick={() => handleScaleChange(-0.1)}
+                    onClick={() => handleScaleButton(-0.1)}
                   >
                     Smaller
                   </button>
                   <button
                     type="button"
                     className="btn btn-outline-dark btn-sm"
-                    onClick={() => handleScaleChange(0.1)}
+                    onClick={() => handleScaleButton(0.1)}
                   >
                     Larger
                   </button>
@@ -580,6 +706,36 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 >
                   Reset position
                 </button>
+              </div>
+
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor={`${product.slug}-scale`} className="form-label mb-0">Scale</label>
+                  <span className="small text-secondary">{Math.round(scaleValue * 100)}%</span>
+                </div>
+                <Form.Range
+                  id={`${product.slug}-scale`}
+                  min={0.2}
+                  max={3}
+                  step={0.05}
+                  value={scaleValue}
+                  onChange={handleScaleSliderChange}
+                />
+              </div>
+
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <label htmlFor={`${product.slug}-rotation`} className="form-label mb-0">Rotation</label>
+                  <span className="small text-secondary">{rotationValue}°</span>
+                </div>
+                <Form.Range
+                  id={`${product.slug}-rotation`}
+                  min={-180}
+                  max={180}
+                  step={1}
+                  value={rotationValue}
+                  onChange={handleRotationChange}
+                />
               </div>
 
               <div className="customizer-canvas-shell">
@@ -612,13 +768,29 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                   }}
                   onTouchMove={(event) => {
                     const touch = event.touches[0];
-                    if (!touch) return;
+                    if (!touch || !dragStateRef.current.isDragging) return;
                     event.preventDefault();
                     updateDrag(touch.clientX, touch.clientY);
                   }}
                   onTouchEnd={() => stopDrag()}
                 />
               </div>
+
+              <button
+                type="button"
+                className="btn btn-success btn-lg w-100 mt-3"
+                onClick={handleAddToCart}
+                disabled={isUploadingDesign || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
+              >
+                {isUploadingDesign ? (
+                  <>
+                    <Spinner animation="border" size="sm" className="me-2" />
+                    Uploading design...
+                  </>
+                ) : (
+                  "Add to cart"
+                )}
+              </button>
             </Card.Body>
           </Card>
         </Col>
