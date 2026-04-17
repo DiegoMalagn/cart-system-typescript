@@ -2,41 +2,29 @@ import { Button, Container, Nav, Navbar as NavbarBs } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { FaHome, FaInfoCircle } from "react-icons/fa";
+import logo from "../assets/logo.png";
 
 export function Navbar() {
   const { openCart, cartQuantity } = useShoppingCart();
   return (
-    <NavbarBs sticky="top" className="bg-black shadow-lg mb-3">
+    <NavbarBs sticky="top" className="shadow-lg mb-3" style={{ backgroundColor: "var(--slp-clay)" }}>
       <Container>
+      <Nav.Link to={"/"} as={NavLink} className="me-3">
+        <img src={logo} alt="Stamp Lab Prints" style={{ height: "48px", width: "auto" }} />
+      </Nav.Link>
       <Nav className="me-auto">
         <Nav.Link
           to={"/"}
           as={NavLink}
-          style={{
-        color: "white",
-        fontWeight: "bold",
-        fontSize: "1.1rem",
-        marginRight: "1.5rem",
-        letterSpacing: "0.5px",
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-          }}
+          className="slp-nav-link"
+          style={{ marginRight: "1.5rem" }}
         >
           <FaHome /> Home
         </Nav.Link>
         <Nav.Link
           to={"about"}
           as={NavLink}
-          style={{
-        color: "white",
-        fontWeight: "bold",
-        fontSize: "1.1rem",
-        letterSpacing: "0.5px",
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-          }}
+          className="slp-nav-link"
         >
           <FaInfoCircle /> About
         </Nav.Link>
@@ -46,7 +34,7 @@ export function Navbar() {
           <Button
             onClick={openCart}
             style={{ width: "3rem", height: "3rem", position: "relative" }}
-            variant="outline-success"
+            variant="outline-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -58,6 +46,7 @@ export function Navbar() {
             <div
               className="rounded-circle bg-primary d-flex justify-content-center align-items-center"
               style={{
+                backgroundColor: "var(--slp-peach)",
                 color: "white",
                 width: "1.2rem",
                 height: "1.2rem",
