@@ -16,14 +16,6 @@
     "sizes": ["M", "L", "XL"]
   },
   {
-    "id": 3,
-    "name": "Vintage Washed Tee",
-    "description": "Garment-dyed t-shirt with a vintage washed look and soft worn-in feel.",
-    "price": 30,
-    "imageUrl": "https://images.unsplash.com/photo-1583743814966-8936f37f4678?w=500",
-    "sizes": ["S", "M", "L"]
-  },
-  {
     "id": 4,
     "name": "Graphic Print Tee",
     "description": "Bold graphic t-shirt printed on premium cotton with long-lasting ink.",

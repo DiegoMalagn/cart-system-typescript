@@ -43,6 +43,21 @@ body {
   color: #ffffff;
 }
 
+.hero-section {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 92vh;
+}
+
+@media (max-width: 767px) {
+  .hero-section {
+    min-height: 70vh;
+  }
+}
+
 .slp-shop-now-btn {
   background-color: var(--slp-peach);
   border-color: var(--slp-peach);
@@ -79,6 +94,63 @@ body {
 
 .slp-social-link:hover {
   color: var(--slp-peach);
+}
+
+.accordion-card-row {
+  display: flex;
+  flex-direction: row;
+  height: 480px;
+  gap: 10px;
+}
+
+@media (max-width: 767px) {
+  .accordion-card-row {
+    flex-direction: column;
+    height: auto;
+  }
+}
+
+.accordion-card {
+  flex: 1;
+  transition: flex 0.4s ease;
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  background-size: cover;
+  background-position: center;
+}
+
+.accordion-card.expanded {
+  flex: 4;
+}
+
+.accordion-card.collapsed {
+  flex: 0.6;
+}
+
+@media (max-width: 767px) {
+  .accordion-card,
+  .accordion-card.expanded,
+  .accordion-card.collapsed {
+    flex: 1 1 260px;
+    min-height: 260px;
+  }
+}
+
+.accordion-card-label {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.accordion-card-cta {
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.accordion-card.expanded .accordion-card-cta {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .product-card {
