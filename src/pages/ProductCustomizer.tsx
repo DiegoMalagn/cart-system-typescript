@@ -114,16 +114,6 @@ function drawBaseProduct(
     const offsetX = (canvas.width - drawWidth) / 2;
     const offsetY = (canvas.height - drawHeight) / 2;
     context.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
-    context.strokeStyle = "rgba(33, 37, 41, 0.22)";
-    context.lineWidth = 1;
-    context.setLineDash([7, 5]);
-    context.strokeRect(
-      TSHIRT_PRINT_AREA.x,
-      TSHIRT_PRINT_AREA.y,
-      TSHIRT_PRINT_AREA.width,
-      TSHIRT_PRINT_AREA.height
-    );
-    context.setLineDash([]);
 
     context.fillStyle = "#1d1d1d";
     context.textAlign = "left";
