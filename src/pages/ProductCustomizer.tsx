@@ -80,7 +80,7 @@ const TSHIRT_COLOR_IMAGES: Record<string, string> = {
   "#ffffff": tshirtWhite,
 };
 
-const TSHIRT_PRINT_AREA = { x: 160, y: 180, width: 220, height: 220 };
+
 
 function drawBaseProduct(
   canvas: HTMLCanvasElement,
