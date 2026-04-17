@@ -3,6 +3,14 @@ import { Alert, Badge, Card, Col, Form, Row, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import design1 from "../assets/designs/stampDesign1.png";
 import design2 from "../assets/designs/stampDesign2.png";
+import tshirtBlack from "../assets/mockups/tshirt-black.png";
+import tshirtWhite from "../assets/mockups/tshirt-white.png";
+import tshirtLightGray from "../assets/mockups/tshirt-lightgray.png";
+import tshirtBurgundy from "../assets/mockups/tshirt-burgundy.png";
+import tshirtRed from "../assets/mockups/tshirt-red.png";
+import tshirtSand from "../assets/mockups/tshirt-sand.png";
+import tshirtOlive from "../assets/mockups/tshirt-olive.png";
+import tshirtSlate from "../assets/mockups/tshirt-slate.png";
 import {
   type CartItemCustomization,
   useShoppingCart,
@@ -61,11 +69,26 @@ const PRODUCT_OPTIONS_CONFIG: Record<
   totebag: { showColor: false, showSize: false, showMaterial: false },
 };
 
+const TSHIRT_COLOR_IMAGES: Record<string, string> = {
+  "#221d19": tshirtBlack,
+  "#3b525f": tshirtSlate,
+  "#40382d": tshirtOlive,
+  "#6e222c": tshirtBurgundy,
+  "#e7ece7": tshirtLightGray,
+  "#eec98a": tshirtSand,
+  "#ef000b": tshirtRed,
+  "#ffffff": tshirtWhite,
+};
+
+const TSHIRT_PRINT_AREA = { x: 160, y: 180, width: 220, height: 220 };
+
 function drawBaseProduct(
   canvas: HTMLCanvasElement,
+  productType: CustomProductSlug,
   productName: string,
   colorHex: string,
   size: string,
+  baseImage?: HTMLImageElement | null,
   material?: string
 ) {
   const context = canvas.getContext("2d");
@@ -80,6 +103,44 @@ function drawBaseProduct(
   gradient.addColorStop(1, "#ddd7cd");
   context.fillStyle = gradient;
   context.fillRect(0, 0, width, height);
+
+  if (productType === "tshirt" && baseImage) {
+    const scale = Math.min(
+      canvas.width / baseImage.naturalWidth,
+      canvas.height / baseImage.naturalHeight
+    );
+    const drawWidth = baseImage.naturalWidth * scale;
+    const drawHeight = baseImage.naturalHeight * scale;
+    const offsetX = (canvas.width - drawWidth) / 2;
+    const offsetY = (canvas.height - drawHeight) / 2;
+    context.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
+    context.strokeStyle = "rgba(33, 37, 41, 0.22)";
+    context.lineWidth = 1;
+    context.setLineDash([7, 5]);
+    context.strokeRect(
+      TSHIRT_PRINT_AREA.x,
+      TSHIRT_PRINT_AREA.y,
+      TSHIRT_PRINT_AREA.width,
+      TSHIRT_PRINT_AREA.height
+    );
+    context.setLineDash([]);
+
+    context.fillStyle = "#1d1d1d";
+    context.textAlign = "left";
+    context.font = "700 14px Arial";
+    context.fillText(`${productName} mockup`, 20, 28);
+
+    if (size) {
+      context.font = "500 12px Arial";
+      context.fillText(`Size: ${size}`, 20, 48);
+    }
+
+    if (material) {
+      context.fillText(`Material: ${material}`, 20, 66);
+    }
+
+    return;
+  }
 
   context.fillStyle = "rgba(0, 0, 0, 0.08)";
   context.beginPath();
@@ -226,13 +287,14 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const { increaseCartQuantity } = useShoppingCart();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const designTransform = useRef({
-    x: 210,
-    y: 210,
+    x: productType === "tshirt" ? 260 : 260,
+    y: productType === "tshirt" ? 260 : 260,
     scale: 1,
     rotationDeg: 0,
   });
   const dragStateRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
   const activeDesignImageRef = useRef<HTMLImageElement | null>(null);
+  const baseProductImageRef = useRef<HTMLImageElement | null>(null);
 
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].label);
   const [selectedSize, setSelectedSize] = useState(AVAILABLE_SIZES[0]);
@@ -260,6 +322,11 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     [selectedColor]
   );
 
+  const selectedBaseImage = useMemo(
+    () => (productType === "tshirt" ? TSHIRT_COLOR_IMAGES[selectedColorValue] : undefined),
+    [productType, selectedColorValue]
+  );
+
   const redrawCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const designImage = activeDesignImageRef.current;
@@ -268,9 +335,11 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     drawBaseProduct(
       canvas,
+      productType,
       product.name,
       selectedColorValue,
       productOptions.showSize ? selectedSize : "",
+      baseProductImageRef.current,
       productOptions.showMaterial ? selectedMaterial : undefined
     );
 
@@ -293,7 +362,22 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     context.strokeRect(-width / 2, -height / 2, width, height);
     context.setLineDash([]);
     context.restore();
-  }, [product.name, productOptions.showMaterial, productOptions.showSize, selectedColorValue, selectedMaterial, selectedSize]);
+  }, [product.name, productOptions.showMaterial, productOptions.showSize, productType, selectedColorValue, selectedMaterial, selectedSize]);
+
+  useEffect(() => {
+    if (!selectedBaseImage) {
+      baseProductImageRef.current = null;
+      redrawCanvas();
+      return;
+    }
+
+    const image = new Image();
+    image.onload = () => {
+      baseProductImageRef.current = image;
+      redrawCanvas();
+    };
+    image.src = selectedBaseImage;
+  }, [redrawCanvas, selectedBaseImage]);
 
   useEffect(() => {
     const image = new Image();
@@ -434,7 +518,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       setUploadedDesigns((prev) => [...prev, customDesign]);
       setSelectedDesignId(customDesign.id);
       designTransform.current = {
-        x: 210,
+        x: 260,
         y: 260,
         scale: 1,
         rotationDeg: 0,
@@ -730,10 +814,10 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
               <div className="customizer-canvas-shell">
                 <canvas
                   ref={canvasRef}
-                  width={420}
+                  width={520}
                   height={520}
                   className="w-100"
-                  style={{ maxWidth: "420px", display: "block", margin: "0 auto", touchAction: "none", cursor: "grab" }}
+                  style={{ maxWidth: "520px", display: "block", margin: "0 auto", touchAction: "none", cursor: "grab" }}
                   onMouseDown={(event) => {
                     if (beginDrag(event.clientX, event.clientY)) {
                       event.currentTarget.style.cursor = "grabbing";
