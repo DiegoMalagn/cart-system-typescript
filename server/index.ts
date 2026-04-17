@@ -188,6 +188,30 @@ app.use("/api/upload-design", (err: any, _req: express.Request, res: express.Res
   return res.status(500).json({ error: "Upload failed" });
 });
 
+app.get("/api/design-image", async (req, res) => {
+  const url = req.query.url as string;
+
+  if (!url || !url.startsWith(process.env.R2_PUBLIC_URL!)) {
+    return res.status(400).json({ error: "Invalid image URL" });
+  }
+
+  try {
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return res.status(502).json({ error: "Could not fetch image" });
+    }
+
+    const buffer = await response.arrayBuffer();
+    res.set("Content-Type", "image/png");
+    res.set("Access-Control-Allow-Origin", "*");
+    res.set("Cache-Control", "public, max-age=31536000");
+    res.send(Buffer.from(buffer));
+  } catch {
+    res.status(500).json({ error: "Proxy failed" });
+  }
+});
+
 /* =========================================================
     CHECKOUT
 ========================================================= */

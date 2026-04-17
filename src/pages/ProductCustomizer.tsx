@@ -21,6 +21,7 @@ type DesignOption = {
   label: string;
   sourceType: "preset" | "upload";
   imageUrl: string;
+  fulfillmentUrl?: string;
 };
 
 const colorOptions = [
@@ -421,11 +422,13 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       }
 
       const data = (await res.json()) as { url: string };
+      const proxyUrl = `/api/design-image?url=${encodeURIComponent(data.url)}`;
       const customDesign: DesignOption = {
         id: `custom-upload-${Date.now()}`,
         label: "My Design",
         sourceType: "upload",
-        imageUrl: data.url,
+        imageUrl: proxyUrl,
+        fulfillmentUrl: data.url,
       };
 
       setUploadedDesigns((prev) => [...prev, customDesign]);
@@ -460,7 +463,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
         sourceType: activeDesign.sourceType,
         // imageUrl is the permanent reference to the customer's chosen design.
         // At fulfillment, fetch this URL to retrieve the PNG for gang sheet layout.
-        imageUrl: activeDesign.imageUrl,
+        imageUrl: activeDesign.fulfillmentUrl ?? activeDesign.imageUrl,
       },
       transform: { ...designTransform.current },
     };
@@ -474,6 +477,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     window.setTimeout(() => setSaveMessage(null), 2500);
   }, [
     activeDesign.id,
+    activeDesign.fulfillmentUrl,
     activeDesign.imageUrl,
     activeDesign.label,
     activeDesign.sourceType,
