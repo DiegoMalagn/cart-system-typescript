@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import multer from "multer";
 import crypto from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
+import nodemailer from "nodemailer";
 import { r2 } from "./src/lib/r2Client";
 
 // Required environment variables (set in Railway dashboard and /server/.env):
@@ -51,6 +52,21 @@ const upload = multer({
 // ✅ Stripe init
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2026-03-25.dahlia",
+});
+
+// Required environment variables (add to Railway and server/.env):
+// SMTP_HOST — e.g. smtp-mail.outlook.com for Outlook
+// SMTP_PORT — 587
+// SMTP_USER — stamplabprints@outlook.com
+// SMTP_PASS — your Outlook password or app password
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
 });
 
 // ✅ CLIENT URL
@@ -245,6 +261,68 @@ app.post("/checkout", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Checkout failed" });
+  }
+});
+
+app.post("/api/contact", async (req, res) => {
+  const { name, email, subject, message } = req.body as {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+  };
+
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Invalid email address" });
+  }
+
+  try {
+    await transporter.sendMail({
+      from: `"Stamp Lab Prints" <${process.env.SMTP_USER}>`,
+      to: "stamplabprints@outlook.com",
+      replyTo: email,
+      subject: `Contact Form: ${subject}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px;">
+          <h2 style="color: #884c42;">New Contact Form Submission</h2>
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="padding: 8px; font-weight: bold; width: 100px;">Name:</td>
+              <td style="padding: 8px;">${name}</td>
+            </tr>
+            <tr style="background: #fdfaf0;">
+              <td style="padding: 8px; font-weight: bold;">Email:</td>
+              <td style="padding: 8px;">
+                <a href="mailto:${email}">${email}</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; font-weight: bold;">Subject:</td>
+              <td style="padding: 8px;">${subject}</td>
+            </tr>
+            <tr style="background: #fdfaf0;">
+              <td style="padding: 8px; font-weight: bold; vertical-align: top;">
+                Message:
+              </td>
+              <td style="padding: 8px; white-space: pre-wrap;">${message}</td>
+            </tr>
+          </table>
+          <p style="color: #888; font-size: 12px; margin-top: 24px;">
+            Sent from stamplabprints.com contact form
+          </p>
+        </div>
+      `,
+    });
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error("Email send failed:", err);
+    return res.status(500).json({ error: "Failed to send message" });
   }
 });
 

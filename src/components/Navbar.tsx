@@ -1,7 +1,7 @@
 import { Button, Container, Nav, Navbar as NavbarBs } from "react-bootstrap";
 import { NavLink } from "react-router-dom";
 import { useShoppingCart } from "../context/ShoppingCartContext";
-import { FaHome, FaInfoCircle } from "react-icons/fa";
+import { FaEnvelope, FaHome, FaInfoCircle } from "react-icons/fa";
 import logo from "../assets/logo.png";
 
 export function Navbar() {
@@ -25,8 +25,16 @@ export function Navbar() {
           to={"about"}
           as={NavLink}
           className="slp-nav-link"
+          style={{ marginRight: "1.5rem" }}
         >
           <FaInfoCircle /> About
+        </Nav.Link>
+        <Nav.Link
+          to={"contact"}
+          as={NavLink}
+          className="slp-nav-link"
+        >
+          <FaEnvelope /> Contact
         </Nav.Link>
       </Nav>
 

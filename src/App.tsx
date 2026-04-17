@@ -9,6 +9,7 @@ import { ProductPage } from "./pages/ProductPage";
 import { PaymentSuccess } from "./pages/Success";
 import { PaymentFailed } from "./pages/Failed";
 import { ProductCustomizer } from "./pages/ProductCustomizer";
+import { Contact } from "./pages/Contact";
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/customize/totebag" element={<ProductCustomizer productType="totebag" />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/failed" element={<PaymentFailed />} />
+          <Route path="/contact" element={<Contact />} />
         </Routes>
       </Container>
       <Footer/>

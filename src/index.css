@@ -43,6 +43,29 @@ body {
   color: #ffffff;
 }
 
+.btn-brand {
+  background-color: var(--slp-clay);
+  border-color: var(--slp-clay);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 0.6rem 2rem;
+  font-weight: 600;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.btn-brand:hover,
+.btn-brand:focus {
+  background-color: var(--slp-peach);
+  border-color: var(--slp-peach);
+  color: #ffffff;
+}
+
+.btn-brand:disabled {
+  background-color: var(--slp-sand);
+  border-color: var(--slp-sand);
+  color: #ffffff;
+}
+
 .hero-section {
   position: relative;
   overflow: hidden;
@@ -93,6 +116,15 @@ body {
 }
 
 .slp-social-link:hover {
+  color: var(--slp-peach);
+}
+
+.slp-footer-link {
+  color: #ffffff;
+  transition: color 0.2s ease;
+}
+
+.slp-footer-link:hover {
   color: var(--slp-peach);
 }
 
@@ -151,6 +183,24 @@ body {
 .accordion-card.expanded .accordion-card-cta {
   opacity: 1;
   pointer-events: auto;
+}
+
+.about-feature-card {
+  background: #ffffff;
+  border: 1px solid var(--slp-sand);
+  border-radius: 16px;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  height: 100%;
+}
+
+.eyebrow {
+  letter-spacing: 0.18em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  display: block;
 }
 
 .product-card {

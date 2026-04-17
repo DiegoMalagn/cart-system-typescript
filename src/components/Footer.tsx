@@ -1,10 +1,19 @@
 import { Container, Row, Col } from "react-bootstrap";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
     <footer className="mt-auto" style={{ backgroundColor: "var(--slp-clay)", color: "white", padding: "2rem 1rem" }}>
       <Container>
+        <div className="text-center mb-3">
+          <Link
+            to="/contact"
+            className="text-decoration-none slp-footer-link"
+          >
+            Contact Us
+          </Link>
+        </div>
         <Row className="justify-content-center">
           <Col
             md={4}
