@@ -51,10 +51,15 @@ const accordionImages: Record<string, string> = {
   totebag: imgTotebag,
 };
 
+const STORE_DISPLAY_ORDER = [1, 3, 2];
+
 export function Home() {
   const navigate = useNavigate();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(customProducts[0]?.slug ?? null);
+  const orderedItems = STORE_DISPLAY_ORDER
+    .map((id) => storeItems.find((item) => item.id === id))
+    .filter((item): item is (typeof storeItems)[number] => Boolean(item));
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -204,7 +209,7 @@ export function Home() {
         </div>
 
         <Row md={2} xs={1} lg={3} className="g-3">
-          {storeItems.map((item) => (
+          {orderedItems.map((item) => (
             <Col key={item.id}>
               <StoreItem {...item} />
             </Col>

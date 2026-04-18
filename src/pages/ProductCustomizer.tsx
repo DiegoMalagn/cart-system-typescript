@@ -366,8 +366,6 @@ function getAngleDeg(
 
 function drawBaseProduct(
   canvas: HTMLCanvasElement,
-  productName: string,
-  colorHex: string,
   baseImage?: HTMLImageElement | null
 ) {
   const context = canvas.getContext("2d");
@@ -389,108 +387,7 @@ function drawBaseProduct(
     const offsetX = (canvas.width - drawWidth) / 2;
     const offsetY = (canvas.height - drawHeight) / 2;
     context.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
-
-    return;
   }
-
-  context.fillStyle = "rgba(0, 0, 0, 0.08)";
-  context.beginPath();
-  context.ellipse(width / 2, height - 54, 140, 26, 0, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = colorHex;
-  context.strokeStyle = "rgba(20, 20, 20, 0.2)";
-  context.lineWidth = 4;
-
-  switch (productName) {
-    case "T-shirt":
-      context.beginPath();
-      context.moveTo(115, 118);
-      context.lineTo(165, 86);
-      context.lineTo(205, 118);
-      context.lineTo(225, 96);
-      context.lineTo(274, 128);
-      context.lineTo(248, 175);
-      context.lineTo(231, 165);
-      context.lineTo(231, 345);
-      context.lineTo(89, 345);
-      context.lineTo(89, 165);
-      context.lineTo(72, 175);
-      context.lineTo(46, 128);
-      context.lineTo(95, 96);
-      context.closePath();
-      break;
-    case "Hoodie":
-      context.beginPath();
-      context.moveTo(108, 120);
-      context.quadraticCurveTo(160, 70, 212, 120);
-      context.lineTo(248, 150);
-      context.lineTo(228, 346);
-      context.lineTo(92, 346);
-      context.lineTo(72, 150);
-      context.closePath();
-      context.moveTo(136, 123);
-      context.quadraticCurveTo(160, 100, 184, 123);
-      break;
-    case "Sweater":
-      context.beginPath();
-      context.moveTo(92, 104);
-      context.lineTo(118, 84);
-      context.lineTo(142, 112);
-      context.lineTo(178, 112);
-      context.lineTo(202, 84);
-      context.lineTo(228, 104);
-      context.lineTo(258, 150);
-      context.lineTo(233, 174);
-      context.lineTo(222, 346);
-      context.lineTo(98, 346);
-      context.lineTo(88, 174);
-      context.lineTo(62, 150);
-      context.closePath();
-      break;
-    case "Glass cup":
-      context.beginPath();
-      context.moveTo(160, 92);
-      context.lineTo(360, 92);
-      context.lineTo(330, 410);
-      context.lineTo(190, 410);
-      context.closePath();
-      break;
-    case "Hat":
-      context.beginPath();
-      context.ellipse(width / 2, 190, 110, 72, 0, Math.PI, 0, true);
-      context.lineTo(318, 198);
-      context.quadraticCurveTo(260, 265, 202, 198);
-      context.closePath();
-      break;
-    case "Apron":
-      context.beginPath();
-      context.moveTo(180, 82);
-      context.lineTo(340, 82);
-      context.lineTo(390, 150);
-      context.lineTo(340, 420);
-      context.lineTo(180, 420);
-      context.lineTo(130, 150);
-      context.closePath();
-      break;
-    case "Tote bag":
-      context.beginPath();
-      context.moveTo(150, 150);
-      context.lineTo(370, 150);
-      context.lineTo(335, 430);
-      context.lineTo(185, 430);
-      context.closePath();
-      context.moveTo(205, 150);
-      context.quadraticCurveTo(205, 88, 260, 88);
-      context.quadraticCurveTo(315, 88, 315, 150);
-      break;
-    default:
-      context.fillRect(120, 120, 280, 240);
-  }
-
-  context.fill();
-  context.stroke();
-
 }
 
 export function ProductCustomizer({ productType }: ProductCustomizerProps) {
@@ -546,7 +443,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     front: AVAILABLE_DESIGNS[0].id,
     back: AVAILABLE_DESIGNS[0].id,
   });
-  const [visibleStartIndex, setVisibleStartIndex] = useState(0);
   const [activeDesignNaturalSize, setActiveDesignNaturalSize] = useState<{
     width: number;
     height: number;
@@ -578,11 +474,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     return candidate || undefined;
   }, [activeSide, productType, selectedColorValue]);
 
-  const visibleDesigns = useMemo(
-    () => availableDesigns.slice(visibleStartIndex, visibleStartIndex + 3),
-    [availableDesigns, visibleStartIndex]
-  );
-
   const dimensionReadout = useMemo(() => {
     if (!activeDesignNaturalSize) return null;
 
@@ -606,8 +497,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     drawBaseProduct(
       canvas,
-      product.name,
-      selectedColorValue,
       baseProductImageRef.current
     );
 
@@ -681,7 +570,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
       context.restore();
     }
-  }, [activeSide, product.name, productType, selectedColorValue, showSideControls]);
+  }, [activeSide]);
 
   useEffect(() => {
     if (!selectedBaseImage) {
@@ -727,19 +616,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   useEffect(() => {
     redrawCanvas();
   }, [redrawCanvas]);
-
-  useEffect(() => {
-    const activeIndex = availableDesigns.findIndex((design) => design.id === activeDesignId);
-
-    if (activeIndex === -1) return;
-    if (activeIndex < visibleStartIndex) {
-      setVisibleStartIndex(activeIndex);
-      return;
-    }
-    if (activeIndex >= visibleStartIndex + 3) {
-      setVisibleStartIndex(Math.max(0, activeIndex - 2));
-    }
-  }, [activeDesignId, availableDesigns, visibleStartIndex]);
 
   const beginDrag = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
@@ -819,7 +695,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     } else if (ds.mode && ds.mode.startsWith("scale-") && designImage) {
       const currentDist = getDistanceFromCenter(point, transform);
       const ratio = currentDist / ds.startDist;
-      const newScale = Math.min(3, Math.max(0.2,
+      const newScale = Math.min(6, Math.max(0.2,
         Number((ds.startScale * ratio).toFixed(3))
       ));
       transform.scale = newScale;
@@ -920,7 +796,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       designTransforms.current[activeSide] = getDefaultTransform(productType);
       setScaleValue(1);
       setRotationValue(0);
-      setVisibleStartIndex(Math.max(availableDesigns.length - 1, 0));
     } catch (err) {
       setUploadError(
         err instanceof Error ? err.message : "Upload failed — please try a PNG under 20MB"
@@ -929,7 +804,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     } finally {
       setIsUploading(false);
     }
-  }, [activeSide, availableDesigns.length, productType]);
+  }, [activeSide, productType]);
 
   const handleAddToCart = useCallback(() => {
     const frontDesign =
@@ -1249,68 +1124,33 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
         <div className="control-group control-group--wide">
           <span className="control-group-label">Design</span>
-          <div className="d-flex align-items-center gap-2">
-            <button
-              type="button"
-              className="design-picker-arrow"
-              onClick={() => setVisibleStartIndex((current) => Math.max(current - 1, 0))}
-              disabled={visibleStartIndex === 0}
-            >
-              ‹
-            </button>
-            <div className="d-flex gap-2 flex-grow-1">
-              {visibleDesigns.map((design) => {
-                const isSelected = activeDesignId === design.id;
-
-                return (
-                  <button
-                    key={design.id}
-                    type="button"
-                    onClick={() => selectDesign(design.id)}
-                    className="btn p-2 text-center flex-fill"
-                    style={{
-                      minWidth: 0,
-                      borderRadius: "12px",
-                      border: isSelected ? "2px solid var(--slp-clay)" : "1px solid var(--slp-sand)",
-                      backgroundColor: "#ffffff",
-                      boxShadow: isSelected ? "0 0 0 2px rgba(136, 76, 66, 0.12)" : "none",
-                    }}
-                  >
-                    <img
-                      src={design.imageUrl}
-                      alt={design.label}
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        objectFit: "contain",
-                        display: "block",
-                        margin: "0 auto 0.5rem",
-                      }}
-                    />
-                    <span className="small fw-semibold d-block text-truncate">{design.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              type="button"
-              className="design-picker-arrow"
-              onClick={() =>
-                setVisibleStartIndex((current) =>
-                  Math.min(current + 1, Math.max(availableDesigns.length - 3, 0))
-                )
-              }
-              disabled={visibleStartIndex + 3 >= availableDesigns.length}
-            >
-              ›
-            </button>
+          <div className="design-picker-scroll">
+            {availableDesigns.map((design) => {
+              const isSelected = sideDesigns[activeSide] === design.id;
+              return (
+                <button
+                  key={design.id}
+                  type="button"
+                  onClick={() => selectDesign(design.id)}
+                  className={`design-thumb ${isSelected ? "selected" : ""}`}
+                  title={design.label}
+                >
+                  <img
+                    src={design.imageUrl}
+                    alt={design.label}
+                    className="design-thumb-img"
+                  />
+                  <span className="design-thumb-label">{design.label}</span>
+                </button>
+              );
+            })}
+            {isUploading ? (
+              <div className="design-thumb design-thumb--loading">
+                <Spinner animation="border" size="sm" />
+                <span className="design-thumb-label">Uploading</span>
+              </div>
+            ) : null}
           </div>
-          {isUploading ? (
-            <div className="d-flex align-items-center gap-2 small fw-semibold text-secondary">
-              <Spinner animation="border" size="sm" />
-              Uploading design...
-            </div>
-          ) : null}
         </div>
 
         <div className="control-group control-group--wide">

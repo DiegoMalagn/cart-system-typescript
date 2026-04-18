@@ -524,29 +524,94 @@ body {
   white-space: nowrap;
 }
 
-.design-picker-arrow {
-  background: none;
-  border: 1px solid var(--slp-sand);
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
+.design-picker-scroll {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: var(--slp-clay);
+  flex-direction: row;
+  gap: 0.6rem;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding-bottom: 0.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--slp-sand) transparent;
+}
+
+.design-picker-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.design-picker-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.design-picker-scroll::-webkit-scrollbar-thumb {
+  background: var(--slp-sand);
+  border-radius: 999px;
+}
+
+.design-thumb {
   flex-shrink: 0;
+  scroll-snap-align: start;
+  width: 90px;
+  border-radius: 10px;
+  border: 1.5px solid #d6d6d6;
+  background: #ffffff;
+  padding: 0.4rem;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  position: relative;
 }
 
-.design-picker-arrow:disabled {
-  opacity: 0.3;
-  cursor: default;
+.design-thumb::after {
+  content: "";
+  display: none;
 }
 
-.design-picker-arrow:hover:not(:disabled) {
-  background: var(--slp-clay);
-  color: white;
+.design-thumb:hover {
   border-color: var(--slp-clay);
+  box-shadow: 0 0 0 2px rgba(136, 76, 66, 0.12);
+}
+
+.design-thumb.selected {
+  border: 2px solid var(--slp-clay);
+  box-shadow: 0 0 0 2px rgba(136, 76, 66, 0.15);
+}
+
+.design-thumb-img {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  display: block;
+}
+
+.design-thumb:hover .design-thumb-img {
+  transform: scale(1.08);
+  transition: transform 0.15s ease;
+}
+
+.design-thumb-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--slp-clay);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+  display: block;
+}
+
+.design-thumb--loading {
+  justify-content: center;
+  min-height: 90px;
+  border-style: dashed;
+  color: var(--slp-clay);
+  cursor: default;
 }
 
 .customizer-panel .form-select {
