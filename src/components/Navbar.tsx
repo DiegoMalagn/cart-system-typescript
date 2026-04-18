@@ -7,38 +7,46 @@ import logo from "../assets/logo.png";
 export function Navbar() {
   const { openCart, cartQuantity } = useShoppingCart();
   return (
-    <NavbarBs sticky="top" className="shadow-lg mb-3" style={{ backgroundColor: "var(--slp-clay)" }}>
-      <Container>
-      <Nav.Link to={"/"} as={NavLink} className="me-3">
-        <img src={logo} alt="Stamp Lab Prints" style={{ height: "48px", width: "auto" }} />
-      </Nav.Link>
-      <Nav className="me-auto">
-        <Nav.Link
-          to={"/"}
-          as={NavLink}
-          className="slp-nav-link"
-          style={{ marginRight: "1.5rem" }}
-        >
-          <FaHome /> Home
-        </Nav.Link>
-        <Nav.Link
-          to={"about"}
-          as={NavLink}
-          className="slp-nav-link"
-          style={{ marginRight: "1.5rem" }}
-        >
-          <FaInfoCircle /> About
-        </Nav.Link>
-        <Nav.Link
-          to={"contact"}
-          as={NavLink}
-          className="slp-nav-link"
-        >
-          <FaEnvelope /> Contact
-        </Nav.Link>
-      </Nav>
+    <NavbarBs
+      expand="xs"
+      sticky="top"
+      className="shadow-lg mb-3"
+      style={{ backgroundColor: "var(--slp-clay)" }}
+    >
+      <Container className="d-flex align-items-center gap-2 flex-nowrap">
+        <NavbarBs.Brand as={NavLink} to="/" className="me-2 flex-shrink-0">
+          <img src={logo} alt="Stamp Lab Prints" style={{ height: "48px", width: "auto" }} />
+        </NavbarBs.Brand>
 
-        {cartQuantity > 0 && (
+        <NavbarBs.Collapse id="main-navbar" className="flex-grow-1 mx-1">
+          <Nav className="me-auto">
+            <Nav.Link
+              to={"/"}
+              as={NavLink}
+              className="slp-nav-link"
+              style={{ marginRight: "1.5rem" }}
+            >
+              <FaHome /> Home
+            </Nav.Link>
+            <Nav.Link
+              to={"about"}
+              as={NavLink}
+              className="slp-nav-link"
+              style={{ marginRight: "1.5rem" }}
+            >
+              <FaInfoCircle /> About
+            </Nav.Link>
+            <Nav.Link
+              to={"contact"}
+              as={NavLink}
+              className="slp-nav-link"
+            >
+              <FaEnvelope /> Contact
+            </Nav.Link>
+          </Nav>
+        </NavbarBs.Collapse>
+
+        <div className="flex-shrink-0">
           <Button
             onClick={openCart}
             style={{ width: "3rem", height: "3rem", position: "relative" }}
@@ -62,12 +70,13 @@ export function Navbar() {
                 bottom: 0,
                 right: 0,
                 transform: "translate(25%, 25%)",
+                display: cartQuantity > 0 ? "flex" : "none",
               }}
             >
               {cartQuantity}
             </div>
           </Button>
-        )}
+        </div>
       </Container>
     </NavbarBs>
   );
