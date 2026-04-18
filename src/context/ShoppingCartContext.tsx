@@ -24,6 +24,32 @@ export type CartItemCustomization = {
     scale: number;
     rotationDeg: number;
   };
+  sides?: {
+    front: {
+      designId: string;
+      designLabel: string;
+      sourceType: "preset" | "upload";
+      designUrl: string;
+      transform: {
+        x: number;
+        y: number;
+        scale: number;
+        rotationDeg: number;
+      };
+    };
+    back: {
+      designId: string;
+      designLabel: string;
+      sourceType: "preset" | "upload";
+      designUrl: string;
+      transform: {
+        x: number;
+        y: number;
+        scale: number;
+        rotationDeg: number;
+      };
+    };
+  };
 };
 
 export type CartItem = {
