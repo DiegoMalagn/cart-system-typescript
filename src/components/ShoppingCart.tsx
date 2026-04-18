@@ -1,8 +1,7 @@
 import { Offcanvas, Stack, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { useShoppingCart } from "../context/ShoppingCartContext";
 import { CartItem } from "./CartItem";
-import items from "../data/items.json";
-import { customProductMap } from "../data/customProducts";
 
 type ShoppingCartProps = {
   isOpen: boolean;
@@ -10,42 +9,11 @@ type ShoppingCartProps = {
 
 export function ShoppingCart({ isOpen }: ShoppingCartProps) {
   const { closeCart, cartItems } = useShoppingCart();
+  const navigate = useNavigate();
 
-    async function handleCheckout() {
-  console.log("Checkout clicked");
-  // Read API base URL from Vite env. Fallback to localhost for dev.
-  const API_URL = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
-
-  const res = await fetch(`${API_URL.replace(/\/$/, "")}/checkout`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        items: cartItems.map(item => {
-          const product = item.customization
-            ? customProductMap[item.customization.productType as keyof typeof customProductMap]
-            : items.find(i => i.id === item.id);
-
-          return {
-            id: item.id,
-            name: product?.name,
-            price: product?.price,
-            size: item.size,
-            quantity: item.quantity,
-            productType: item.customization?.productType ?? "standard-product",
-            genderFit: item.customization?.genderFit,
-            customization: item.customization,
-          };
-        }),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.url) {
-      window.location.href = data.url;
-    }
+  function handleReviewOrder() {
+    closeCart();
+    navigate("/checkout/review");
   }
 
   return (
@@ -77,9 +45,9 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
           <Button
             className="mt-2 w-100"
             size="lg"
-            onClick={handleCheckout}
+            onClick={handleReviewOrder}
           >
-            Proceed to Checkout
+            Review Order
           </Button>
         </>
       )}

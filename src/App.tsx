@@ -10,6 +10,7 @@ import { PaymentSuccess } from "./pages/Success";
 import { PaymentFailed } from "./pages/Failed";
 import { ProductCustomizer } from "./pages/ProductCustomizer";
 import { Contact } from "./pages/Contact";
+import { CheckoutReview } from "./pages/CheckoutReview";
 
 function App() {
   return (
@@ -27,6 +28,8 @@ function App() {
           <Route path="/customize/hat" element={<ProductCustomizer productType="hat" />} />
           <Route path="/customize/apron" element={<ProductCustomizer productType="apron" />} />
           <Route path="/customize/totebag" element={<ProductCustomizer productType="totebag" />} />
+          <Route path="/checkout/review" element={<CheckoutReview />} />
+          <Route path="/cart" element={<CheckoutReview />} />
           <Route path="/payment/success" element={<PaymentSuccess />} />
           <Route path="/payment/failed" element={<PaymentFailed />} />
           <Route path="/contact" element={<Contact />} />

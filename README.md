@@ -81,6 +81,21 @@ The backend is responsible for:
 - Stripe webhook handling
 - Order persistence to MongoDB after successful payment
 - Checkout metadata includes cart item information for downstream order handling
+- Server-side cart quoting for the review page before payment
+- Stripe Checkout remains the final source of truth for automatic tax and final shipping address collection
+
+### Stripe Dashboard Checks
+
+Verify these settings before production checkout goes live:
+
+- Stripe Tax is enabled for the account
+- Checkout is allowed to calculate tax automatically
+- Line items are treated as tax-exclusive
+  The backend explicitly sends `tax_behavior: "exclusive"` when creating Checkout Session line items.
+- Shipping address collection is enabled through the Checkout Session flow
+- The webhook endpoint is subscribed to at least:
+  - `checkout.session.completed`
+  - `checkout.session.async_payment_succeeded`
 
 ## Tech Stack
 

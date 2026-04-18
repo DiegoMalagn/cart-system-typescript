@@ -3,6 +3,7 @@ import { type CartItem as CartItemType, useShoppingCart } from "../context/Shopp
 import storeItems from "../data/items.json";
 import { formatCurrency } from "../utilities/formatCurrency";
 import { customProductMap } from "../data/customProducts";
+import { getCustomProductUnitPrice } from "../utilities/catalogPricing";
 
 type CartItemProps = {
   item: CartItemType;
@@ -19,6 +20,10 @@ export function CartItem({ item }: CartItemProps) {
     ? customProductMap[item.customization.productType as keyof typeof customProductMap]
     : storeItems.find((storeItem) => storeItem.id === item.id);
   if (!product) return null;
+
+  const unitPrice = item.customization
+    ? getCustomProductUnitPrice(item.customization.productType, item.customization.size)
+    : product.price;
 
   const customizationSummary = [
     item.customization?.color ? `Color: ${item.customization.color}` : null,
@@ -54,7 +59,7 @@ export function CartItem({ item }: CartItemProps) {
         <div className="fw-semibold">
           {product.name} {item.size ? <span className="text-muted">({item.size})</span> : null}
         </div>
-        <div className="text-muted small">{formatCurrency(product.price)}</div>
+        <div className="text-muted small">{formatCurrency(unitPrice)}</div>
         {item.customization ? (
           <div className="d-flex align-items-center gap-2 mt-2">
             {item.customization.design.sourceType === "upload" ? (
@@ -92,7 +97,7 @@ export function CartItem({ item }: CartItemProps) {
         className="fw-semibold text-success ms-3 flex-shrink-0"
         style={{ minWidth: "70px", textAlign: "right" }}
       >
-        {formatCurrency(product.price * item.quantity)}
+        {formatCurrency(unitPrice * item.quantity)}
       </div>
 
       <Button

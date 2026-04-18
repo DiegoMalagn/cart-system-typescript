@@ -9,6 +9,14 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import nodemailer from "nodemailer";
 import { r2 } from "./src/lib/r2Client";
 import { Order } from "./src/models/Order";
+import {
+  buildCartQuote,
+  buildStripeShippingOption,
+  type CartItemCustomizationInput,
+  type NormalizedQuoteItem,
+  type QuoteRequest,
+  type QuoteRequestItem,
+} from "./src/lib/pricing";
 
 // Required environment variables (set in Railway dashboard and /server/.env):
 // R2_ENDPOINT      — https://<accountid>.r2.cloudflarestorage.com
@@ -77,55 +85,17 @@ type CheckoutItemCustomization = {
   size?: string;
   genderFit?: string;
   material?: string;
-  design: {
-    id: string;
-    label: string;
-    sourceType: "preset" | "upload";
-    imageUrl: string;
-  };
-  transform: {
-    x: number;
-    y: number;
-    scale: number;
-    rotationDeg: number;
-  };
+  design: CartItemCustomizationInput["design"];
+  transform: CartItemCustomizationInput["transform"];
 };
 
 type CheckoutItemPayload = {
   id: number;
-  name?: string;
-  price?: number;
   size?: string;
   quantity?: number;
   productType?: string;
   genderFit?: string;
   customization?: CheckoutItemCustomization;
-};
-
-type NormalizedOrderItem = {
-  productType: string;
-  quantity: number;
-  unitPrice: number;
-  lineTotal: number;
-  size?: string;
-  genderFit?: string;
-  color?: string;
-  material?: string;
-  customization?: {
-    design: {
-      id: string;
-      label: string;
-      sourceType: "preset" | "upload";
-      imageUrl: string;
-    };
-    transform: {
-      x: number;
-      y: number;
-      scale: number;
-      rotationDeg: number;
-    };
-  };
-  productionStatus: string;
 };
 
 function toOptionalString(value: unknown) {
@@ -146,15 +116,14 @@ function toCurrencyAmount(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function serializeLineItemMetadata(item: CheckoutItemPayload) {
+function serializeLineItemMetadata(item: NormalizedQuoteItem) {
   const customization = item.customization;
-
   return {
-    productType: customization?.productType ?? item.productType ?? "standard-product",
-    size: customization?.size ?? item.size ?? "",
-    genderFit: customization?.genderFit ?? item.genderFit ?? "",
-    color: customization?.color ?? "",
-    material: customization?.material ?? "",
+    productType: item.productType,
+    size: item.size ?? "",
+    genderFit: item.genderFit ?? "",
+    color: item.color ?? "",
+    material: item.material ?? "",
     designId: customization?.design.id ?? "",
     designLabel: customization?.design.label ?? "",
     designSourceType: customization?.design.sourceType ?? "",
@@ -181,7 +150,7 @@ function getExpandedProduct(product: unknown) {
   return product;
 }
 
-function normalizeOrderItem(lineItem: any): NormalizedOrderItem {
+function normalizeOrderItem(lineItem: any) {
   const expandedProduct = getExpandedProduct(lineItem.price?.product) as
     | { name?: string; metadata?: Record<string, string> }
     | null;
@@ -365,6 +334,23 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
+app.post("/api/cart/quote", (req, res) => {
+  try {
+    const quoteRequest = req.body as QuoteRequest;
+    const quote = buildCartQuote({
+      items: quoteRequest.items ?? [],
+      estimateAddress: quoteRequest.estimateAddress,
+    });
+
+    return res.json(quote);
+  } catch (error: any) {
+    console.error("Quote generation failed:", error);
+    return res.status(400).json({
+      error: error?.message || "Unable to generate cart quote",
+    });
+  }
+});
+
 app.post("/api/upload-design", upload.single("file"), async (req, res) => {
   try {
     const file = req.file;
@@ -443,6 +429,12 @@ app.post("/checkout", async (req, res) => {
   }
 
   try {
+    const quote = buildCartQuote({
+      items: items as QuoteRequestItem[],
+    });
+
+    // Stripe Tax must be enabled in the Stripe Dashboard for automatic_tax to work.
+    // Each line item is sent as tax-exclusive so Checkout can calculate the final tax.
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       billing_address_collection: "required",
@@ -453,28 +445,40 @@ app.post("/checkout", async (req, res) => {
       shipping_address_collection: {
         allowed_countries: ["US"],
       },
-      line_items: items.map((item) => ({
+      automatic_tax: {
+        enabled: true,
+      },
+      shipping_options: [buildStripeShippingOption(quote)],
+      line_items: quote.items.map((item) => ({
         price_data: {
           currency: "usd",
           product_data: {
-            name: item.size ? `${item.name} (Size: ${item.size})` : item.name ?? "Product",
+            name: item.size ? `${item.displayName} (Size: ${item.size})` : item.displayName,
             metadata: serializeLineItemMetadata(item),
           },
-          unit_amount: Math.round((item.price ?? 0) * 100),
+          unit_amount: item.unitPrice,
+          tax_behavior: "exclusive",
         },
-        quantity: item.quantity ?? 1,
+        quantity: item.quantity,
       })),
       success_url: `${CLIENT_URL}/payment/success`,
       cancel_url: `${CLIENT_URL}/payment/failed`,
       metadata: {
-        cartItemCount: String(items.length),
+        cartItemCount: String(quote.items.length),
+        quoteSubtotal: String(quote.subtotal),
+        quoteShipping: String(quote.shipping),
       },
     });
 
     return res.json({ url: session.url });
   } catch (err) {
     console.error("Checkout session creation failed:", err);
-    return res.status(500).json({ error: "Checkout failed" });
+    const message =
+      err instanceof Error &&
+      err.message.toLowerCase().includes("automatic tax")
+        ? "Stripe Checkout could not start because automatic tax is not fully configured."
+        : "Checkout failed";
+    return res.status(500).json({ error: message });
   }
 });
 
