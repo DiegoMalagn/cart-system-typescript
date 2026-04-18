@@ -8,7 +8,7 @@ export function Navbar() {
   const { openCart, cartQuantity } = useShoppingCart();
   return (
     <NavbarBs
-      expand="xs"
+      expand="lg"
       sticky="top"
       className="shadow-lg mb-3"
       style={{ backgroundColor: "var(--slp-clay)" }}
@@ -17,6 +17,8 @@ export function Navbar() {
         <NavbarBs.Brand as={NavLink} to="/" className="me-2 flex-shrink-0">
           <img src={logo} alt="Stamp Lab Prints" style={{ height: "48px", width: "auto" }} />
         </NavbarBs.Brand>
+
+        <NavbarBs.Toggle aria-controls="main-navbar" className="flex-shrink-0" />
 
         <NavbarBs.Collapse id="main-navbar" className="flex-grow-1 mx-1">
           <Nav className="me-auto">
