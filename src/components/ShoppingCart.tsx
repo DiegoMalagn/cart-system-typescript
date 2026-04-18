@@ -33,6 +33,8 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
             price: product?.price,
             size: item.size,
             quantity: item.quantity,
+            productType: item.customization?.productType ?? "standard-product",
+            genderFit: item.customization?.genderFit,
             customization: item.customization,
           };
         }),
@@ -68,13 +70,18 @@ export function ShoppingCart({ isOpen }: ShoppingCartProps) {
       </Stack>
 
       {cartItems.length > 0 && (
-        <Button
-          className="mt-4 w-100"
-          size="lg"
-          onClick={handleCheckout}
-        >
-          Proceed to Checkout
-        </Button>
+        <>
+          <div className="mt-4 small text-secondary">
+            Review size, fit, and design details before checkout.
+          </div>
+          <Button
+            className="mt-2 w-100"
+            size="lg"
+            onClick={handleCheckout}
+          >
+            Proceed to Checkout
+          </Button>
+        </>
       )}
     </Offcanvas.Body>
     </Offcanvas>

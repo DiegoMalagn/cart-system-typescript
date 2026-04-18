@@ -56,17 +56,24 @@ const AVAILABLE_MATERIALS = [
 const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
 // future: add XS, 4XL etc. here
 
+const AVAILABLE_GENDER_FITS = ["Unisex", "Men's", "Women's"];
+
 const PRODUCT_OPTIONS_CONFIG: Record<
   CustomProductSlug,
-  { showColor: boolean; showSize: boolean; showMaterial: boolean }
+  {
+    showColor: boolean;
+    showSize: boolean;
+    showGenderFit: boolean;
+    showMaterial: boolean;
+  }
 > = {
-  tshirt: { showColor: true, showSize: true, showMaterial: true },
-  hoodie: { showColor: true, showSize: true, showMaterial: true },
-  sweater: { showColor: true, showSize: true, showMaterial: true },
-  glasscup: { showColor: false, showSize: false, showMaterial: false },
-  hat: { showColor: false, showSize: false, showMaterial: false },
-  apron: { showColor: false, showSize: false, showMaterial: false },
-  totebag: { showColor: false, showSize: false, showMaterial: false },
+  tshirt: { showColor: true, showSize: true, showGenderFit: true, showMaterial: true },
+  hoodie: { showColor: true, showSize: true, showGenderFit: true, showMaterial: true },
+  sweater: { showColor: true, showSize: true, showGenderFit: true, showMaterial: true },
+  glasscup: { showColor: false, showSize: false, showGenderFit: false, showMaterial: false },
+  hat: { showColor: false, showSize: false, showGenderFit: false, showMaterial: false },
+  apron: { showColor: false, showSize: false, showGenderFit: false, showMaterial: false },
+  totebag: { showColor: false, showSize: false, showGenderFit: false, showMaterial: false },
 };
 
 const TSHIRT_COLOR_IMAGES: Record<string, string> = {
@@ -288,6 +295,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].label);
   const [selectedSize, setSelectedSize] = useState(AVAILABLE_SIZES[0]);
+  const [selectedGenderFit, setSelectedGenderFit] = useState(AVAILABLE_GENDER_FITS[0]);
   const [selectedDesignId, setSelectedDesignId] = useState(AVAILABLE_DESIGNS[0].id);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
   const [uploadedDesigns, setUploadedDesigns] = useState<DesignOption[]>([]);
@@ -530,6 +538,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       productType,
       color: productOptions.showColor ? selectedColor : undefined,
       size: productOptions.showSize ? selectedSize : undefined,
+      genderFit: productOptions.showGenderFit ? selectedGenderFit : undefined,
       material: productOptions.showMaterial ? selectedMaterial : undefined,
       design: {
         id: activeDesign.id,
@@ -558,10 +567,12 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     increaseCartQuantity,
     product.id,
     productOptions.showColor,
+    productOptions.showGenderFit,
     productOptions.showMaterial,
     productOptions.showSize,
     productType,
     selectedColor,
+    selectedGenderFit,
     selectedMaterial,
     selectedSize,
   ]);
@@ -644,6 +655,22 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 </Form.Group>
               ) : null}
 
+              {productOptions.showGenderFit ? (
+                <Form.Group className="mb-3">
+                  <Form.Label>Fit</Form.Label>
+                  <Form.Select
+                    value={selectedGenderFit}
+                    onChange={(event) => setSelectedGenderFit(event.target.value)}
+                  >
+                    {AVAILABLE_GENDER_FITS.map((fit) => (
+                      <option key={fit} value={fit}>
+                        {fit}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              ) : null}
+
               <Form.Group className="mb-4">
                 <Form.Label>Design</Form.Label>
                 <div className="d-flex gap-2 overflow-auto pb-1">
@@ -720,6 +747,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
                 <div className="d-flex flex-wrap gap-2">
                   {productOptions.showColor ? <Badge bg="dark">{selectedColor}</Badge> : null}
                   {productOptions.showSize ? <Badge bg="secondary">{selectedSize}</Badge> : null}
+                  {productOptions.showGenderFit ? <Badge bg="info">{selectedGenderFit}</Badge> : null}
                   <Badge bg="warning" text="dark">{activeDesign.label}</Badge>
                   {productOptions.showMaterial ? <Badge bg="success">{selectedMaterial}</Badge> : null}
                 </div>

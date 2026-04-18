@@ -8,6 +8,7 @@ import crypto from "crypto";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import nodemailer from "nodemailer";
 import { r2 } from "./src/lib/r2Client";
+import { Order } from "./src/models/Order";
 
 // Required environment variables (set in Railway dashboard and /server/.env):
 // R2_ENDPOINT      — https://<accountid>.r2.cloudflarestorage.com
@@ -20,13 +21,11 @@ dotenv.config();
 
 console.log("Starting server...");
 
-// ✅ Mongo connection with logging
 mongoose
   .connect(process.env.MONGO_URI!)
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB error:", err));
 
-// ✅ Port handling
 const PORT: number = (() => {
   const raw = process.env.PORT;
   if (!raw) return 4000;
@@ -49,7 +48,6 @@ const upload = multer({
   },
 });
 
-// ✅ Stripe init
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: "2026-03-25.dahlia",
 });
@@ -69,21 +67,245 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// ✅ CLIENT URL
 const CLIENT_URL = (process.env.CLIENT_URL || "http://localhost:5173")
   .trim()
   .replace(/\/$/, "");
 
-// ✅ CORS
+type CheckoutItemCustomization = {
+  productType: string;
+  color?: string;
+  size?: string;
+  genderFit?: string;
+  material?: string;
+  design: {
+    id: string;
+    label: string;
+    sourceType: "preset" | "upload";
+    imageUrl: string;
+  };
+  transform: {
+    x: number;
+    y: number;
+    scale: number;
+    rotationDeg: number;
+  };
+};
+
+type CheckoutItemPayload = {
+  id: number;
+  name?: string;
+  price?: number;
+  size?: string;
+  quantity?: number;
+  productType?: string;
+  genderFit?: string;
+  customization?: CheckoutItemCustomization;
+};
+
+type NormalizedOrderItem = {
+  productType: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  size?: string;
+  genderFit?: string;
+  color?: string;
+  material?: string;
+  customization?: {
+    design: {
+      id: string;
+      label: string;
+      sourceType: "preset" | "upload";
+      imageUrl: string;
+    };
+    transform: {
+      x: number;
+      y: number;
+      scale: number;
+      rotationDeg: number;
+    };
+  };
+  productionStatus: string;
+};
+
+function toOptionalString(value: unknown) {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function toOptionalNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return undefined;
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+function toCurrencyAmount(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function serializeLineItemMetadata(item: CheckoutItemPayload) {
+  const customization = item.customization;
+
+  return {
+    productType: customization?.productType ?? item.productType ?? "standard-product",
+    size: customization?.size ?? item.size ?? "",
+    genderFit: customization?.genderFit ?? item.genderFit ?? "",
+    color: customization?.color ?? "",
+    material: customization?.material ?? "",
+    designId: customization?.design.id ?? "",
+    designLabel: customization?.design.label ?? "",
+    designSourceType: customization?.design.sourceType ?? "",
+    designImageUrl: customization?.design.imageUrl ?? "",
+    transformX: customization ? String(customization.transform.x) : "",
+    transformY: customization ? String(customization.transform.y) : "",
+    transformScale: customization ? String(customization.transform.scale) : "",
+    transformRotationDeg: customization
+      ? String(customization.transform.rotationDeg)
+      : "",
+  };
+}
+
+function getExpandedProduct(product: unknown) {
+  if (
+    !product ||
+    typeof product === "string" ||
+    typeof product !== "object" ||
+    ("deleted" in product && Boolean(product.deleted))
+  ) {
+    return null;
+  }
+
+  return product;
+}
+
+function normalizeOrderItem(lineItem: any): NormalizedOrderItem {
+  const expandedProduct = getExpandedProduct(lineItem.price?.product) as
+    | { name?: string; metadata?: Record<string, string> }
+    | null;
+  const metadata = expandedProduct?.metadata ?? {};
+  const quantity = lineItem.quantity ?? 1;
+  const unitPrice = lineItem.price?.unit_amount ?? Math.round((lineItem.amount_total ?? 0) / quantity);
+  const lineTotal = lineItem.amount_total ?? unitPrice * quantity;
+  const designId = toOptionalString(metadata.designId);
+  const designLabel = toOptionalString(metadata.designLabel);
+  const designSourceType = toOptionalString(metadata.designSourceType) as
+    | "preset"
+    | "upload"
+    | undefined;
+  const designImageUrl = toOptionalString(metadata.designImageUrl);
+
+  return {
+    productType:
+      toOptionalString(metadata.productType) ??
+      toOptionalString(expandedProduct?.name) ??
+      "standard-product",
+    quantity,
+    unitPrice,
+    lineTotal,
+    size: toOptionalString(metadata.size),
+    genderFit: toOptionalString(metadata.genderFit),
+    color: toOptionalString(metadata.color),
+    material: toOptionalString(metadata.material),
+    customization:
+      designId && designLabel && designSourceType && designImageUrl
+        ? {
+            design: {
+              id: designId,
+              label: designLabel,
+              sourceType: designSourceType,
+              imageUrl: designImageUrl,
+            },
+            transform: {
+              x: toOptionalNumber(metadata.transformX) ?? 0,
+              y: toOptionalNumber(metadata.transformY) ?? 0,
+              scale: toOptionalNumber(metadata.transformScale) ?? 1,
+              rotationDeg: toOptionalNumber(metadata.transformRotationDeg) ?? 0,
+            },
+          }
+        : undefined,
+    productionStatus: "queued",
+  };
+}
+
+function buildOrderNumber(sessionId: string) {
+  const suffix = sessionId.replace(/^cs_/, "").slice(-10).toUpperCase();
+  return `SLP-${suffix}`;
+}
+
+async function persistCompletedCheckout(sessionId: string) {
+  const session = await stripe.checkout.sessions.retrieve(sessionId, {
+    expand: ["payment_intent"],
+  });
+
+  const lineItems = await stripe.checkout.sessions.listLineItems(sessionId, {
+    limit: 100,
+    expand: ["data.price.product"],
+  });
+
+  const shippingDetails = (session as any).shipping_details;
+  const customerDetails = session.customer_details;
+  const shippingAddress = shippingDetails?.address ?? customerDetails?.address ?? null;
+
+  const normalizedItems = lineItems.data.map(normalizeOrderItem);
+
+  await Order.findOneAndUpdate(
+    { stripeSessionId: session.id },
+    {
+      orderNumber: buildOrderNumber(session.id),
+      stripeSessionId: session.id,
+      stripePaymentIntentId:
+        typeof session.payment_intent === "string"
+          ? session.payment_intent
+          : session.payment_intent?.id,
+      paymentStatus: session.payment_status ?? "paid",
+      fulfillmentStatus: "queued",
+      customer: {
+        fullName:
+          toOptionalString(customerDetails?.name) ??
+          toOptionalString(shippingDetails?.name),
+        email: toOptionalString(customerDetails?.email),
+        phone: toOptionalString(customerDetails?.phone),
+      },
+      shippingAddress: shippingAddress
+        ? {
+            recipientName:
+              toOptionalString(shippingDetails?.name) ??
+              toOptionalString(customerDetails?.name),
+            line1: toOptionalString(shippingAddress.line1),
+            line2: toOptionalString(shippingAddress.line2),
+            city: toOptionalString(shippingAddress.city),
+            state: toOptionalString(shippingAddress.state),
+            postalCode: toOptionalString(shippingAddress.postal_code),
+            country: toOptionalString(shippingAddress.country),
+          }
+        : undefined,
+      pricing: {
+        subtotal: toCurrencyAmount(session.amount_subtotal),
+        shipping: toCurrencyAmount(session.total_details?.amount_shipping),
+        tax: toCurrencyAmount(session.total_details?.amount_tax),
+        total: toCurrencyAmount(session.amount_total),
+        currency: toOptionalString(session.currency)?.toUpperCase() ?? "USD",
+      },
+      items: normalizedItems,
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+      runValidators: true,
+    }
+  );
+}
+
 app.use(
   cors({
     origin: CLIENT_URL,
   })
 );
 
-/* =========================================================
-    WEBHOOK (MUST COME BEFORE express.json())
-========================================================= */
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
@@ -95,64 +317,46 @@ app.post(
       return res.status(500).json({ error: "Webhook secret is not configured" });
     }
 
-  let event: any;
+    let event: any;
 
     try {
-      // express.raw provides a Buffer
       const payload = req.body as Buffer;
-      event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET);
+      event = stripe.webhooks.constructEvent(
+        payload,
+        sig,
+        process.env.STRIPE_WEBHOOK_SECRET
+      );
     } catch (err: any) {
-      console.error("❌ Webhook signature verification failed:", err?.message || err);
+      console.error("Webhook signature verification failed:", err?.message || err);
       return res.status(400).json({ error: "Invalid signature" });
     }
 
-    if (event.type === "checkout.session.completed") {
-  const session = event.data.object as any;
-
-      console.log("✅ Payment confirmed:", session.id);
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      const checkoutSession = event.data.object as { id: string };
 
       try {
-        const items = JSON.parse(session.metadata?.items || "[]");
-
-        await Order.create({
-          sessionId: session.id,
-          amountTotal: session.amount_total,
-          items,
-        });
-
-        console.log("✅ Order saved to DB");
+        await persistCompletedCheckout(checkoutSession.id);
+        console.log("Order normalized and saved:", checkoutSession.id);
       } catch (err) {
-        console.error("❌ Error saving order:", err);
+        console.error("Failed to normalize Stripe checkout session:", {
+          sessionId: checkoutSession.id,
+          error: err,
+        });
       }
     }
 
-    res.sendStatus(200);
+    return res.sendStatus(200);
   }
 );
 
-/* =========================================================
-    BODY PARSER (AFTER webhook)
-========================================================= */
 app.use((req, res, next) => {
   if (req.path === "/api/upload-design") return next();
   express.json()(req, res, next);
 });
 
-/* =========================================================
-    MONGOOSE MODEL
-========================================================= */
-const orderSchema = new mongoose.Schema({
-  sessionId: { type: String, required: true },
-  items: { type: Array, default: [] },
-  amountTotal: { type: Number, default: 0 },
-  createdAt: { type: Date, default: Date.now },
-});
-
-const Order = mongoose.model("Order", orderSchema);
-
-/* =========================================================
-    ROUTES
-========================================================= */
 app.get("/", (_req, res) => {
   res.send("Server is alive");
 });
@@ -194,15 +398,18 @@ app.post("/api/upload-design", upload.single("file"), async (req, res) => {
   }
 });
 
-app.use("/api/upload-design", (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  if (err?.code === "LIMIT_FILE_SIZE") {
-    return res.status(400).json({ error: "File too large — maximum size is 20MB" });
+app.use(
+  "/api/upload-design",
+  (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    if (err?.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({ error: "File too large — maximum size is 20MB" });
+    }
+    if (err?.message === "PNG_ONLY") {
+      return res.status(400).json({ error: "Only PNG files are accepted" });
+    }
+    return res.status(500).json({ error: "Upload failed" });
   }
-  if (err?.message === "PNG_ONLY") {
-    return res.status(400).json({ error: "Only PNG files are accepted" });
-  }
-  return res.status(500).json({ error: "Upload failed" });
-});
+);
 
 app.get("/api/design-image", async (req, res) => {
   const url = req.query.url as string;
@@ -222,45 +429,52 @@ app.get("/api/design-image", async (req, res) => {
     res.set("Content-Type", "image/png");
     res.set("Access-Control-Allow-Origin", "*");
     res.set("Cache-Control", "public, max-age=31536000");
-    res.send(Buffer.from(buffer));
+    return res.send(Buffer.from(buffer));
   } catch {
-    res.status(500).json({ error: "Proxy failed" });
+    return res.status(500).json({ error: "Proxy failed" });
   }
 });
 
-/* =========================================================
-    CHECKOUT
-========================================================= */
 app.post("/checkout", async (req, res) => {
-  console.log("request received.");
-  const { items } = req.body;
+  const { items } = req.body as { items?: CheckoutItemPayload[] };
+
+  if (!items?.length) {
+    return res.status(400).json({ error: "No checkout items provided" });
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: items.map((item: any) => ({
+      billing_address_collection: "required",
+      customer_creation: "always",
+      phone_number_collection: {
+        enabled: true,
+      },
+      shipping_address_collection: {
+        allowed_countries: ["US"],
+      },
+      line_items: items.map((item) => ({
         price_data: {
           currency: "usd",
           product_data: {
-            name: item.size ? `${item.name} (Size: ${item.size})` : item.name,
+            name: item.size ? `${item.name} (Size: ${item.size})` : item.name ?? "Product",
+            metadata: serializeLineItemMetadata(item),
           },
-          unit_amount: item.price * 100,
+          unit_amount: Math.round((item.price ?? 0) * 100),
         },
-        quantity: item.quantity,
+        quantity: item.quantity ?? 1,
       })),
       success_url: `${CLIENT_URL}/payment/success`,
       cancel_url: `${CLIENT_URL}/payment/failed`,
       metadata: {
-        items: JSON.stringify(items),
+        cartItemCount: String(items.length),
       },
     });
 
-    //  DO NOT SAVE ORDER HERE
-
-    res.json({ url: session.url });
+    return res.json({ url: session.url });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Checkout failed" });
+    console.error("Checkout session creation failed:", err);
+    return res.status(500).json({ error: "Checkout failed" });
   }
 });
 

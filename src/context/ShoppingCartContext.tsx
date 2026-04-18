@@ -10,6 +10,7 @@ export type CartItemCustomization = {
   productType: string;
   color?: string;
   size?: string;
+  genderFit?: string;
   material?: string;
   design: {
     id: string;

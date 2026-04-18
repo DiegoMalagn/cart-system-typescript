@@ -23,6 +23,7 @@ export function CartItem({ item }: CartItemProps) {
   const customizationSummary = [
     item.customization?.color ? `Color: ${item.customization.color}` : null,
     item.customization?.size ? `Size: ${item.customization.size}` : null,
+    item.customization?.genderFit ? `Fit: ${item.customization.genderFit}` : null,
     `Design: ${item.customization?.design.label ?? "Standard"}`,
     item.customization?.material ? `Material: ${item.customization.material}` : null,
   ]
