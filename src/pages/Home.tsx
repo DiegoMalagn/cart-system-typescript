@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import storeItems from "../data/items.json";
@@ -12,34 +12,7 @@ import imgGlassCup from "../assets/stock/frostedglasscuplogo.png";
 import imgHat from "../assets/stock/caplogo.png";
 import imgApron from "../assets/stock/apronlogo.png";
 import imgTotebag from "../assets/stock/linenbagwithlogo.png";
-
-const slides = [
-  {
-    url: "https://images.unsplash.com/photo-1529374255404-311a2a4f1fd9?w=1600&q=80",
-    alt: "Person wearing a custom t-shirt",
-    position: "center 30%",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1556821840-3a63f15732ce?w=1600&q=80",
-    alt: "Model in hoodie",
-    position: "center center",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=1600&q=80",
-    alt: "Streetwear apparel close up",
-    position: "center 20%",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f?w=1600&q=80",
-    alt: "Custom printed apparel flat lay",
-    position: "center center",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1600&q=80",
-    alt: "Person in branded streetwear",
-    position: "center 25%",
-  },
-];
+import heroHome from "../assets/store/heroHome.png";
 
 const accordionImages: Record<string, string> = {
   tshirt: imgTshirt,
@@ -55,19 +28,10 @@ const STORE_DISPLAY_ORDER = [1, 3, 2];
 
 export function Home() {
   const navigate = useNavigate();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [expandedSlug, setExpandedSlug] = useState<string | null>(customProducts[0]?.slug ?? null);
   const orderedItems = STORE_DISPLAY_ORDER
     .map((id) => storeItems.find((item) => item.id === id))
     .filter((item): item is (typeof storeItems)[number] => Boolean(item));
-
-  useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 5000);
-
-    return () => window.clearInterval(intervalId);
-  }, []);
 
   const handleAccordionClick = (slug: string) => {
     if (expandedSlug === slug) {
@@ -87,23 +51,15 @@ export function Home() {
           position: "relative",
         }}
       >
-        <section className="hero-section">
-          {slides.map((slide, index) => (
-            <div
-              key={slide.url}
-              aria-hidden={index !== currentSlide}
-              style={{
-                position: "absolute",
-                inset: 0,
-                backgroundImage: `url(${slide.url})`,
-                backgroundSize: "cover",
-                backgroundPosition: slide.position,
-                opacity: index === currentSlide ? 1 : 0,
-                transition: "opacity 1s ease",
-              }}
-            />
-          ))}
-
+        <div
+          className="hero-section"
+          style={{
+            backgroundImage: `url(${heroHome})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
           <div
             style={{
               position: "absolute",
@@ -161,36 +117,7 @@ export function Home() {
               Shop Now
             </a>
           </div>
-
-          <div
-            style={{
-              position: "absolute",
-              left: "50%",
-              bottom: "24px",
-              transform: "translateX(-50%)",
-              zIndex: 2,
-              display: "flex",
-              gap: "0.6rem",
-            }}
-          >
-            {slides.map((slide, index) => (
-              <button
-                key={slide.alt}
-                type="button"
-                aria-label={`Go to slide ${index + 1}`}
-                onClick={() => setCurrentSlide(index)}
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "999px",
-                  border: "none",
-                  backgroundColor:
-                    index === currentSlide ? "var(--slp-peach)" : "rgba(255,255,255,0.5)",
-                }}
-              />
-            ))}
-          </div>
-        </section>
+        </div>
       </div>
 
       <section className="my-5" id="products">
