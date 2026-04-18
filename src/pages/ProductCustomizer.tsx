@@ -1,8 +1,60 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { Alert, Badge, Card, Col, Form, Row, Spinner } from "react-bootstrap";
+import { Badge, Form, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import design1 from "../assets/designs/stampDesign1.png";
 import design2 from "../assets/designs/stampDesign2.png";
+import tshirtBlackFront from "../assets/mockups/tshirts/tshirt-black-front.png";
+import tshirtBlackBack from "../assets/mockups/tshirts/tshirt-black-back.png";
+import tshirtWhiteFront from "../assets/mockups/tshirts/tshirt-white-front.png";
+import tshirtWhiteBack from "../assets/mockups/tshirts/tshirt-white-back.png";
+import tshirtSlateFront from "../assets/mockups/tshirts/tshirt-slate-front.png";
+import tshirtSlateBack from "../assets/mockups/tshirts/tshirt-slate-back.png";
+import tshirtOliveFront from "../assets/mockups/tshirts/tshirt-olive-front.png";
+import tshirtOliveBack from "../assets/mockups/tshirts/tshirt-olive-back.png";
+import tshirtBurgundyFront from "../assets/mockups/tshirts/tshirt-burgundy-front.png";
+import tshirtBurgundyBack from "../assets/mockups/tshirts/tshirt-burgundy-back.png";
+import tshirtLightGrayFront from "../assets/mockups/tshirts/tshirt-lightgray-front.png";
+import tshirtLightGrayBack from "../assets/mockups/tshirts/tshirt-lightgray-back.png";
+import tshirtSandFront from "../assets/mockups/tshirts/tshirt-sand-front.png";
+import tshirtSandBack from "../assets/mockups/tshirts/tshirt-sand-back.png";
+import tshirtRedFront from "../assets/mockups/tshirts/tshirt-red-front.png";
+import tshirtRedBack from "../assets/mockups/tshirts/tshirt-red-back.png";
+import hoodieBlackFront from "../assets/mockups/hoodies/hoodie-black-front.png";
+import hoodieBlackBack from "../assets/mockups/hoodies/hoodie-black-back.png";
+import hoodieWhiteFront from "../assets/mockups/hoodies/hoodie-white-front.png";
+import hoodieWhiteBack from "../assets/mockups/hoodies/hoodie-white-back.png";
+import hoodieSlateFront from "../assets/mockups/hoodies/hoodie-slate-front.png";
+import hoodieSlateBack from "../assets/mockups/hoodies/hoodie-slate-black.png";
+import hoodieOliveFront from "../assets/mockups/hoodies/hoodie-olive-front.png";
+import hoodieOliveBack from "../assets/mockups/hoodies/hoodie-olive-back.png";
+import hoodieBurgundyFront from "../assets/mockups/hoodies/hoodie-burgundy-front.png";
+import hoodieBurgundyBack from "../assets/mockups/hoodies/hoodie-burgundy-back.png";
+import hoodieLightGrayFront from "../assets/mockups/hoodies/hoodie-lightgray-front.png";
+import hoodieLightGrayBack from "../assets/mockups/hoodies/hoodie-lightgray-back.png";
+import hoodieSandFront from "../assets/mockups/hoodies/hoodie-sand-front.png";
+import hoodieSandBack from "../assets/mockups/hoodies/hoodie-sand-back.png";
+import hoodieRedFront from "../assets/mockups/hoodies/hoodie-red-front.png";
+import hoodieRedBack from "../assets/mockups/hoodies/hoodie-red-back.png";
+import sweatshirtBlackFront from "../assets/mockups/sweatshirts/sweatshirt-black-front.png";
+import sweatshirtBlackBack from "../assets/mockups/sweatshirts/sweatshirt-black-back.png";
+import sweatshirtWhiteFront from "../assets/mockups/sweatshirts/sweatshirt-white-front.png";
+import sweatshirtWhiteBack from "../assets/mockups/sweatshirts/sweatshirt-white-back.png";
+import sweatshirtSlateFront from "../assets/mockups/sweatshirts/sweatshirt-slate-front.png";
+import sweatshirtSlateBack from "../assets/mockups/sweatshirts/sweatshirt-slate-back.png";
+import sweatshirtOliveFront from "../assets/mockups/sweatshirts/sweatshirt-olive-front.png";
+import sweatshirtOliveBack from "../assets/mockups/sweatshirts/sweatshirt-olive-back.png";
+import sweatshirtBurgundyFront from "../assets/mockups/sweatshirts/sweatshirt-burgundy-front.png";
+import sweatshirtBurgundyBack from "../assets/mockups/sweatshirts/sweatshirt-burgundy-back.png";
+import sweatshirtLightGrayFront from "../assets/mockups/sweatshirts/sweatshirt-lightgray-front.png";
+import sweatshirtLightGrayBack from "../assets/mockups/sweatshirts/sweatshirt-lightgray-back.png";
+import sweatshirtSandFront from "../assets/mockups/sweatshirts/sweatshirt-sand-front.png";
+import sweatshirtSandBack from "../assets/mockups/sweatshirts/sweatshirt-sand-back.png";
+import sweatshirtRedFront from "../assets/mockups/sweatshirts/sweatshirt-red-front.png";
+import sweatshirtRedBack from "../assets/mockups/sweatshirts/sweatshirt-red-back.png";
+import glassCupImage from "../assets/mockups/glassCup/glasscup.png";
+import hatImage from "../assets/mockups/hats/whitehat.png";
+import apronImage from "../assets/mockups/aprons/whiteapron.png";
+import totebagImage from "../assets/mockups/totebags/white-linen-apron.png";
 import {
   type CartItemCustomization,
   useShoppingCart,
@@ -36,15 +88,13 @@ type DesignTransform = {
 type DesignSidesState = Record<MockupSide, string>;
 type DesignTransformMap = Record<MockupSide, DesignTransform>;
 type MockupImagePair = { front: string; back: string };
-
-const mockupAssets = import.meta.glob("../assets/mockups/*.{png,jpg,jpeg,webp}", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
-
-const mockupAssetMap = Object.fromEntries(
-  Object.entries(mockupAssets).map(([path, url]) => [path.split("/").pop() ?? path, url])
-);
+type DragMode =
+  | "move"
+  | "scale-tl"
+  | "scale-tr"
+  | "scale-br"
+  | "scale-bl"
+  | "rotate";
 
 const colorOptions = [
   { label: "Near Black", value: "#221d19" },
@@ -90,81 +140,102 @@ const PRODUCT_OPTIONS_CONFIG: Record<
   totebag: { showColor: false, showSize: false, showGenderFit: false, showMaterial: false },
 };
 
-const COLOR_KEY_BY_HEX: Record<string, string> = {
-  "#221d19": "black",
-  "#3b525f": "slate",
-  "#40382d": "olive",
-  "#6e222c": "burgundy",
-  "#e7ece7": "lightgray",
-  "#eec98a": "sand",
-  "#ef000b": "red",
-  "#ffffff": "white",
-};
+// PNG asset dimensions: 1536 x 1024px at 72 DPI
+// To convert a coordinate measured on the source PNG to canvas px:
+//   canvasX = Math.round(pngX * PNG_SCALE) + IMG_OFFSET_X
+//   canvasY = Math.round(pngY * PNG_SCALE) + IMG_OFFSET_Y
+// To add a new placement zone, measure pngX/pngY in an image
+// editor and apply the formula above.
+const PNG_SCALE = 680 / 1536;
+const IMG_H = Math.round(1024 * PNG_SCALE);
+const IMG_OFFSET_Y = Math.round((480 - IMG_H) / 2);
+const IMG_OFFSET_X = 0;
+const CENTER_X = Math.round(765 * PNG_SCALE);
+const CENTER_Y =
+  Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y;
+const HANDLE_SIZE = 5;
+const ROT_HANDLE_DIST = 20;
+const ROT_HANDLE_RADIUS = 5;
 
-const TSHIRT_PRINT_AREA = { x: 160, y: 180, width: 220, height: 220 };
 const PLACEMENT_ZONES = {
-  "chest-left": { x: 185, y: 195 },
-  "chest-center": { x: 260, y: 200 },
-  "chest-right": { x: 335, y: 195 },
+  "chest-left": {
+    x: Math.round(635 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
+  "chest-center": {
+    x: Math.round(765 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
+  "chest-right": {
+    x: Math.round(895 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
 } as const;
 
-const CANVAS_PX_PER_INCH = 43.3;
+const PLACEMENT_ZONES_BACK = {
+  "chest-left": {
+    x: Math.round(635 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
+  "chest-center": {
+    x: Math.round(765 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
+  "chest-right": {
+    x: Math.round(895 * PNG_SCALE) + IMG_OFFSET_X,
+    y: Math.round(365 * PNG_SCALE) + IMG_OFFSET_Y,
+  },
+} as const;
 
-function getMockupAsset(filename: string) {
-  return mockupAssetMap[filename] ?? "";
-}
+const CANVAS_PX_PER_INCH = 72 * PNG_SCALE;
 
-function buildApparelMockupPair(productPrefix: string, colorKey: string, fallbackColorKey?: string): MockupImagePair {
-  const front =
-    getMockupAsset(`${productPrefix}-${colorKey}-front.png`) ||
-    getMockupAsset(`${productPrefix}-${fallbackColorKey ?? colorKey}-front.png`) ||
-    getMockupAsset(`${productPrefix}-${colorKey}.png`) ||
-    getMockupAsset(`${productPrefix}-${fallbackColorKey ?? colorKey}.png`);
+const TSHIRT_COLOR_IMAGES: Record<string, MockupImagePair> = {
+  "#221d19": { front: tshirtBlackFront, back: tshirtBlackBack },
+  "#3b525f": { front: tshirtSlateFront, back: tshirtSlateBack },
+  "#40382d": { front: tshirtOliveFront, back: tshirtOliveBack },
+  "#6e222c": { front: tshirtBurgundyFront, back: tshirtBurgundyBack },
+  "#e7ece7": { front: tshirtLightGrayFront, back: tshirtLightGrayBack },
+  "#eec98a": { front: tshirtSandFront, back: tshirtSandBack },
+  "#ef000b": { front: tshirtRedFront, back: tshirtRedBack },
+  "#ffffff": { front: tshirtWhiteFront, back: tshirtWhiteBack },
+};
 
-  const back =
-    getMockupAsset(`${productPrefix}-${colorKey}-back.png`) ||
-    getMockupAsset(`${productPrefix}-${fallbackColorKey ?? colorKey}-back.png`) ||
-    front;
+const HOODIE_COLOR_IMAGES: Record<string, MockupImagePair> = {
+  "#221d19": { front: hoodieBlackFront, back: hoodieBlackBack },
+  "#3b525f": { front: hoodieSlateFront, back: hoodieSlateBack || hoodieSlateFront },
+  "#40382d": { front: hoodieOliveFront, back: hoodieOliveBack },
+  "#6e222c": { front: hoodieBurgundyFront, back: hoodieBurgundyBack },
+  "#e7ece7": { front: hoodieLightGrayFront, back: hoodieLightGrayBack },
+  "#eec98a": { front: hoodieSandFront, back: hoodieSandBack },
+  "#ef000b": { front: hoodieRedFront, back: hoodieRedBack },
+  "#ffffff": { front: hoodieWhiteFront, back: hoodieWhiteBack },
+};
 
-  return {
-    front,
-    back: back || front,
-  };
-}
-
-function buildColorImageMap(productPrefix: string, fallbackColorKey?: string) {
-  return Object.fromEntries(
-    Object.entries(COLOR_KEY_BY_HEX).map(([hex, colorKey]) => [
-      hex,
-      buildApparelMockupPair(productPrefix, colorKey, fallbackColorKey),
-    ])
-  ) as Record<string, MockupImagePair>;
-}
-
-function buildSingleImagePair(filename: string): MockupImagePair {
-  const asset = getMockupAsset(filename);
-  return {
-    front: asset,
-    back: asset,
-  };
-}
-
-const TSHIRT_COLOR_IMAGES: Record<string, MockupImagePair> = buildColorImageMap("tshirt");
+const SWEATSHIRT_COLOR_IMAGES: Record<string, MockupImagePair> = {
+  "#221d19": { front: sweatshirtBlackFront, back: sweatshirtBlackBack },
+  "#3b525f": { front: sweatshirtSlateFront, back: sweatshirtSlateBack },
+  "#40382d": { front: sweatshirtOliveFront, back: sweatshirtOliveBack },
+  "#6e222c": { front: sweatshirtBurgundyFront, back: sweatshirtBurgundyBack },
+  "#e7ece7": { front: sweatshirtLightGrayFront, back: sweatshirtLightGrayBack },
+  "#eec98a": { front: sweatshirtSandFront, back: sweatshirtSandBack },
+  "#ef000b": { front: sweatshirtRedFront, back: sweatshirtRedBack },
+  "#ffffff": { front: sweatshirtWhiteFront, back: sweatshirtWhiteBack },
+};
 
 const PRODUCT_BASE_IMAGES: Record<CustomProductSlug, Record<string, MockupImagePair>> = {
   tshirt: TSHIRT_COLOR_IMAGES,
-  hoodie: buildColorImageMap("hoodie", "black"),
-  sweater: buildColorImageMap("sweater", "black"),
-  glasscup: { default: buildSingleImagePair("glasscup.png") },
-  hat: { default: buildSingleImagePair("hat.png") },
-  apron: { default: buildSingleImagePair("apron.png") },
-  totebag: { default: buildSingleImagePair("totebag.png") },
+  hoodie: HOODIE_COLOR_IMAGES,
+  sweater: SWEATSHIRT_COLOR_IMAGES,
+  glasscup: { default: { front: glassCupImage, back: glassCupImage } },
+  hat: { default: { front: hatImage, back: hatImage } },
+  apron: { default: { front: apronImage, back: apronImage } },
+  totebag: { default: { front: totebagImage, back: totebagImage } },
 };
 
 function getDefaultTransform(productType: CustomProductSlug): DesignTransform {
   return productType === "tshirt"
-    ? { x: 260, y: 220, scale: 1, rotationDeg: 0 }
-    : { x: 260, y: 260, scale: 1, rotationDeg: 0 };
+    ? { x: CENTER_X, y: CENTER_Y, scale: 1, rotationDeg: 0 }
+    : { x: CENTER_X, y: CENTER_Y, scale: 1, rotationDeg: 0 };
 }
 
 function getCanvasPoint(
@@ -185,7 +256,7 @@ function getDesignDimensionsFromNatural(
   naturalHeight: number,
   scale: number
 ) {
-  const maxBaseSize = 110;
+  const maxBaseSize = 60;
   const ratio = Math.min(
     maxBaseSize / naturalWidth,
     maxBaseSize / naturalHeight
@@ -201,12 +272,67 @@ function getDesignDimensions(image: HTMLImageElement, scale: number) {
   return getDesignDimensionsFromNatural(image.naturalWidth, image.naturalHeight, scale);
 }
 
+function getHandleAtPoint(
+  point: { x: number; y: number },
+  transform: { x: number; y: number; scale: number; rotationDeg: number },
+  designImage: HTMLImageElement
+): "tl" | "tr" | "br" | "bl" | "rot" | null {
+  const { x, y, rotationDeg } = transform;
+  const { width, height } = getDesignDimensions(designImage, transform.scale);
+  const hw = width / 2;
+  const hh = height / 2;
+  const rad = (rotationDeg * Math.PI) / 180;
+
+  const dx = point.x - x;
+  const dy = point.y - y;
+  const cos = Math.cos(-rad);
+  const sin = Math.sin(-rad);
+  const lx = dx * cos - dy * sin;
+  const ly = dx * sin + dy * cos;
+
+  const rotHandleLocalY = -hh - ROT_HANDLE_DIST;
+  const distToRot = Math.sqrt(lx * lx + (ly - rotHandleLocalY) ** 2);
+  if (distToRot <= ROT_HANDLE_RADIUS + 6) return "rot";
+
+  const cornerHitSize = HANDLE_SIZE + 6;
+  const corners: Array<[number, number, "tl" | "tr" | "br" | "bl"]> = [
+    [-hw, -hh, "tl"],
+    [hw, -hh, "tr"],
+    [hw, hh, "br"],
+    [-hw, hh, "bl"],
+  ];
+
+  for (const [cx, cy, label] of corners) {
+    if (
+      Math.abs(lx - cx) <= cornerHitSize &&
+      Math.abs(ly - cy) <= cornerHitSize
+    ) {
+      return label;
+    }
+  }
+
+  return null;
+}
+
+function getDistanceFromCenter(
+  point: { x: number; y: number },
+  center: { x: number; y: number }
+) {
+  return Math.sqrt((point.x - center.x) ** 2 + (point.y - center.y) ** 2);
+}
+
+function getAngleDeg(
+  point: { x: number; y: number },
+  center: { x: number; y: number }
+) {
+  return Math.atan2(point.y - center.y, point.x - center.x) * (180 / Math.PI);
+}
+
 function drawBaseProduct(
   canvas: HTMLCanvasElement,
   productName: string,
   colorHex: string,
-  baseImage?: HTMLImageElement | null,
-  showPrintArea?: boolean
+  baseImage?: HTMLImageElement | null
 ) {
   const context = canvas.getContext("2d");
 
@@ -227,20 +353,6 @@ function drawBaseProduct(
     const offsetX = (canvas.width - drawWidth) / 2;
     const offsetY = (canvas.height - drawHeight) / 2;
     context.drawImage(baseImage, offsetX, offsetY, drawWidth, drawHeight);
-
-    if (showPrintArea) {
-      context.save();
-      context.strokeStyle = "rgba(136, 76, 66, 0.22)";
-      context.lineWidth = 1;
-      context.setLineDash([6, 5]);
-      context.strokeRect(
-        TSHIRT_PRINT_AREA.x,
-        TSHIRT_PRINT_AREA.y,
-        TSHIRT_PRINT_AREA.width,
-        TSHIRT_PRINT_AREA.height
-      );
-      context.restore();
-    }
 
     return;
   }
@@ -343,19 +455,6 @@ function drawBaseProduct(
   context.fill();
   context.stroke();
 
-  if (showPrintArea) {
-    context.save();
-    context.strokeStyle = "rgba(136, 76, 66, 0.22)";
-    context.lineWidth = 1;
-    context.setLineDash([6, 5]);
-    context.strokeRect(
-      TSHIRT_PRINT_AREA.x,
-      TSHIRT_PRINT_AREA.y,
-      TSHIRT_PRINT_AREA.width,
-      TSHIRT_PRINT_AREA.height
-    );
-    context.restore();
-  }
 }
 
 export function ProductCustomizer({ productType }: ProductCustomizerProps) {
@@ -368,7 +467,28 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     front: getDefaultTransform(productType),
     back: getDefaultTransform(productType),
   });
-  const dragStateRef = useRef({ isDragging: false, offsetX: 0, offsetY: 0 });
+  const showHandlesRef = useRef(false);
+  const dragStateRef = useRef<{
+    mode: DragMode | null;
+    offsetX: number;
+    offsetY: number;
+    startAngle: number;
+    startRotation: number;
+    startScale: number;
+    startDist: number;
+    startX: number;
+    startY: number;
+  }>({
+    mode: null,
+    offsetX: 0,
+    offsetY: 0,
+    startAngle: 0,
+    startRotation: 0,
+    startScale: 1,
+    startDist: 0,
+    startX: 0,
+    startY: 0,
+  });
   const activeDesignImageRef = useRef<HTMLImageElement | null>(null);
   const baseProductImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -449,8 +569,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
       canvas,
       product.name,
       selectedColorValue,
-      baseProductImageRef.current,
-      showSideControls
+      baseProductImageRef.current
     );
 
     if (!designImage) return;
@@ -461,17 +580,68 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
     const { x, y, scale, rotationDeg } = designTransforms.current[activeSide];
     const { width, height } = getDesignDimensions(designImage, scale);
+    const hw = width / 2;
+    const hh = height / 2;
 
     context.save();
     context.translate(x, y);
     context.rotate((rotationDeg * Math.PI) / 180);
     context.drawImage(designImage, -width / 2, -height / 2, width, height);
-    context.strokeStyle = "rgba(136, 76, 66, 0.42)";
-    context.lineWidth = 1.2;
-    context.setLineDash([6, 4]);
-    context.strokeRect(-width / 2, -height / 2, width, height);
-    context.setLineDash([]);
     context.restore();
+
+    if (showHandlesRef.current) {
+      context.save();
+      context.translate(x, y);
+      context.rotate((rotationDeg * Math.PI) / 180);
+
+      context.strokeStyle = "rgba(136, 76, 66, 0.7)";
+      context.lineWidth = 1.5;
+      context.setLineDash([5, 4]);
+      context.strokeRect(-hw, -hh, width, height);
+      context.setLineDash([]);
+
+      context.fillStyle = "#ffffff";
+      context.strokeStyle = "#884c42";
+      context.lineWidth = 1.5;
+      const corners = [
+        { x: -hw, y: -hh },
+        { x: hw, y: -hh },
+        { x: hw, y: hh },
+        { x: -hw, y: hh },
+      ];
+
+      corners.forEach((corner) => {
+        context.fillRect(
+          corner.x - HANDLE_SIZE,
+          corner.y - HANDLE_SIZE,
+          HANDLE_SIZE * 2,
+          HANDLE_SIZE * 2
+        );
+        context.strokeRect(
+          corner.x - HANDLE_SIZE,
+          corner.y - HANDLE_SIZE,
+          HANDLE_SIZE * 2,
+          HANDLE_SIZE * 2
+        );
+      });
+
+      context.beginPath();
+      context.strokeStyle = "#884c42";
+      context.lineWidth = 1.5;
+      context.moveTo(0, -hh);
+      context.lineTo(0, -hh - ROT_HANDLE_DIST);
+      context.stroke();
+
+      context.beginPath();
+      context.arc(0, -hh - ROT_HANDLE_DIST, ROT_HANDLE_RADIUS, 0, Math.PI * 2);
+      context.fillStyle = "#884c42";
+      context.fill();
+      context.strokeStyle = "#ffffff";
+      context.lineWidth = 1.5;
+      context.stroke();
+
+      context.restore();
+    }
   }, [activeSide, product.name, productType, selectedColorValue, showSideControls]);
 
   useEffect(() => {
@@ -535,48 +705,96 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   const beginDrag = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     const designImage = activeDesignImageRef.current;
-
     if (!canvas || !designImage) return false;
 
     const point = getCanvasPoint(canvas, clientX, clientY);
-    const { x, y, scale } = designTransforms.current[activeSide];
-    const { width, height } = getDesignDimensions(designImage, scale);
-    const left = x - width / 2;
-    const top = y - height / 2;
+    const transform = designTransforms.current[activeSide];
+    const handle = getHandleAtPoint(point, transform, designImage);
 
-    if (
-      point.x < left ||
-      point.x > left + width ||
-      point.y < top ||
-      point.y > top + height
-    ) {
-      return false;
+    if (handle === "rot") {
+      dragStateRef.current = {
+        ...dragStateRef.current,
+        mode: "rotate",
+        startAngle: getAngleDeg(point, transform),
+        startRotation: transform.rotationDeg,
+      };
+      return true;
     }
 
-    dragStateRef.current = {
-      isDragging: true,
-      offsetX: point.x - x,
-      offsetY: point.y - y,
-    };
+    if (handle && handle !== null) {
+      dragStateRef.current = {
+        ...dragStateRef.current,
+        mode: `scale-${handle}` as DragMode,
+        startScale: transform.scale,
+        startDist: getDistanceFromCenter(point, transform),
+        startX: transform.x,
+        startY: transform.y,
+      };
+      return true;
+    }
 
-    return true;
+    const { width, height } = getDesignDimensions(designImage, transform.scale);
+    const rad = (transform.rotationDeg * Math.PI) / 180;
+    const dx = point.x - transform.x;
+    const dy = point.y - transform.y;
+    const cos = Math.cos(-rad);
+    const sin = Math.sin(-rad);
+    const lx = dx * cos - dy * sin;
+    const ly = dx * sin + dy * cos;
+
+    if (
+      Math.abs(lx) <= width / 2 &&
+      Math.abs(ly) <= height / 2
+    ) {
+      dragStateRef.current = {
+        ...dragStateRef.current,
+        mode: "move",
+        offsetX: point.x - transform.x,
+        offsetY: point.y - transform.y,
+      };
+      return true;
+    }
+
+    return false;
   }, [activeSide]);
 
   const updateDrag = useCallback((clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
-
-    if (!canvas || !dragStateRef.current.isDragging) return;
+    const designImage = activeDesignImageRef.current;
+    if (!canvas || !dragStateRef.current.mode) return;
+    showHandlesRef.current = true;
 
     const point = getCanvasPoint(canvas, clientX, clientY);
     const transform = designTransforms.current[activeSide];
-    transform.x = point.x - dragStateRef.current.offsetX;
-    transform.y = point.y - dragStateRef.current.offsetY;
+    const ds = dragStateRef.current;
+
+    if (ds.mode === "move") {
+      transform.x = point.x - ds.offsetX;
+      transform.y = point.y - ds.offsetY;
+    } else if (ds.mode === "rotate") {
+      const currentAngle = getAngleDeg(point, transform);
+      const delta = currentAngle - ds.startAngle;
+      const newRot = Math.round(ds.startRotation + delta);
+      transform.rotationDeg = newRot;
+      setRotationValue(newRot);
+    } else if (ds.mode && ds.mode.startsWith("scale-") && designImage) {
+      const currentDist = getDistanceFromCenter(point, transform);
+      const ratio = currentDist / ds.startDist;
+      const newScale = Math.min(3, Math.max(0.2,
+        Number((ds.startScale * ratio).toFixed(3))
+      ));
+      transform.scale = newScale;
+      setScaleValue(newScale);
+    }
+
     redrawCanvas();
   }, [activeSide, redrawCanvas]);
 
   const stopDrag = useCallback(() => {
-    dragStateRef.current.isDragging = false;
-  }, []);
+    dragStateRef.current.mode = null;
+    showHandlesRef.current = false;
+    redrawCanvas();
+  }, [redrawCanvas]);
 
   const resetPosition = useCallback(() => {
     const canvas = canvasRef.current;
@@ -596,34 +814,6 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     redrawCanvas();
   }, [activeSide, productType, redrawCanvas, showSideControls]);
 
-  const handleScaleButton = useCallback((delta: number) => {
-    const transform = designTransforms.current[activeSide];
-    const nextScale = Math.min(
-      3,
-      Math.max(0.2, Number((transform.scale + delta).toFixed(2)))
-    );
-
-    transform.scale = nextScale;
-    setScaleValue(nextScale);
-    redrawCanvas();
-  }, [activeSide, redrawCanvas]);
-
-  const handleScaleSliderChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const nextScale = Number(event.target.value);
-
-    designTransforms.current[activeSide].scale = nextScale;
-    setScaleValue(nextScale);
-    redrawCanvas();
-  }, [activeSide, redrawCanvas]);
-
-  const handleRotationChange = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    const nextRotation = Number(event.target.value);
-
-    designTransforms.current[activeSide].rotationDeg = nextRotation;
-    setRotationValue(nextRotation);
-    redrawCanvas();
-  }, [activeSide, redrawCanvas]);
-
   const switchSide = useCallback((nextSide: MockupSide) => {
     if (nextSide === activeSide) return;
 
@@ -634,7 +824,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
   }, [activeSide]);
 
   const placeDesign = useCallback((placement: keyof typeof PLACEMENT_ZONES) => {
-    const zone = PLACEMENT_ZONES[placement];
+    const zone = activeSide === "back" ? PLACEMENT_ZONES_BACK[placement] : PLACEMENT_ZONES[placement];
     const transform = designTransforms.current[activeSide];
 
     transform.x = zone.x;
@@ -773,382 +963,353 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
   return (
     <div className="py-2">
-      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-        <div>
-          <p className="text-uppercase text-secondary fw-semibold mb-1" style={{ letterSpacing: "0.08em" }}>
-            Product Customizer
-          </p>
-          <h1 className="fw-bold mb-2">{product.name}</h1>
-          <p className="text-secondary mb-0">
-            Build a polished preview with placement, scale, side selection, and design controls.
-          </p>
-        </div>
+      <div className="text-center mb-4">
+        <p className="eyebrow" style={{ color: "var(--slp-clay)" }}>
+          Product Customizer
+        </p>
+        <h1 className="fw-bold mb-2" style={{ color: "var(--slp-clay)" }}>
+          {product.name}
+        </h1>
+        <p className="text-secondary mb-3">
+          Drag the design on the mockup to position it.
+        </p>
         <Link to="/" className="btn btn-outline-dark">
           Back to Home
         </Link>
       </div>
 
-      <Row className="g-4 align-items-start">
-        <Col lg={5}>
-          <Card className="shadow-sm border-0 h-100">
-            <Card.Body className="customizer-panel">
-              <h2 className="h5 fw-bold mb-3">Customize</h2>
+      <div className="customizer-hero">
+        {showSideControls ? (
+          <div className="side-toggle">
+            <button
+              type="button"
+              className={activeSide === "front" ? "active" : ""}
+              onClick={() => switchSide("front")}
+            >
+              Front
+            </button>
+            <button
+              type="button"
+              className={activeSide === "back" ? "active" : ""}
+              onClick={() => switchSide("back")}
+            >
+              Back
+            </button>
+          </div>
+        ) : null}
 
-              {productOptions.showColor ? (
-                <Form.Group className="mb-4">
-                  <Form.Label>Color</Form.Label>
-                  <div className="d-flex flex-wrap gap-2">
-                    {colorOptions.map((option) => {
-                      const isSelected = selectedColor === option.label;
+        {showSideControls ? (
+          <div className="placement-buttons">
+            <button type="button" onClick={() => placeDesign("chest-left")}>
+              ↖ Left Chest
+            </button>
+            <button type="button" onClick={() => placeDesign("chest-center")}>
+              ↑ Center
+            </button>
+            <button type="button" onClick={() => placeDesign("chest-right")}>
+              ↗ Right Chest
+            </button>
+          </div>
+        ) : null}
 
-                      return (
-                        <button
-                          key={option.label}
-                          type="button"
-                          aria-label={option.label}
-                          title={option.label}
-                          onClick={() => setSelectedColor(option.label)}
-                          className="btn p-0 d-inline-flex align-items-center justify-content-center rounded-circle"
-                          style={{
-                            width: "2.5rem",
-                            height: "2.5rem",
-                            backgroundColor: option.value,
-                            border: option.label === "White" ? "1px solid #ccc" : "1px solid transparent",
-                            boxShadow: isSelected ? "0 0 0 3px var(--slp-clay)" : "0 0 0 1px rgba(0, 0, 0, 0.08)",
-                          }}
-                        >
-                          {isSelected ? (
-                            <span
-                              style={{
-                                color:
-                                  option.label === "Light Gray" ||
-                                  option.label === "Sand" ||
-                                  option.label === "White"
-                                    ? "#212529"
-                                    : "#ffffff",
-                                fontSize: "1rem",
-                                fontWeight: 700,
-                                lineHeight: 1,
-                              }}
-                            >
-                              ✓
-                            </span>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Form.Group>
-              ) : null}
+        <canvas
+          ref={canvasRef}
+          width={680}
+          height={480}
+          className="customizer-canvas"
+          style={{ touchAction: "none", cursor: "grab" }}
+          onMouseDown={(event) => {
+            if (beginDrag(event.clientX, event.clientY)) {
+              event.currentTarget.style.cursor = "grabbing";
+            }
+          }}
+          onMouseMove={(event) => {
+            if (dragStateRef.current.mode) {
+              updateDrag(event.clientX, event.clientY);
+              return;
+            }
+            const canvas = canvasRef.current;
+            const designImage = activeDesignImageRef.current;
+            if (!canvas || !designImage) return;
+            const point = getCanvasPoint(canvas, event.clientX, event.clientY);
+            const transform = designTransforms.current[activeSide];
+            const handle = getHandleAtPoint(point, transform, designImage);
+            if (handle === "rot") {
+              event.currentTarget.style.cursor = "crosshair";
+            } else if (handle === "tl" || handle === "br") {
+              event.currentTarget.style.cursor = "nwse-resize";
+            } else if (handle === "tr" || handle === "bl") {
+              event.currentTarget.style.cursor = "nesw-resize";
+            } else {
+              event.currentTarget.style.cursor = "grab";
+            }
 
-              {productOptions.showSize ? (
-                <Form.Group className="mb-3">
-                  <Form.Label>Size</Form.Label>
-                  <Form.Select value={selectedSize} onChange={(event) => setSelectedSize(event.target.value)}>
-                    {AVAILABLE_SIZES.map((size) => (
-                      <option key={size} value={size}>
-                        {size}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              ) : null}
+            const isOverDesign = handle !== null || (() => {
+              if (!designImage) return false;
+              const transform = designTransforms.current[activeSide];
+              const { width, height } = getDesignDimensions(
+                designImage, transform.scale
+              );
+              const rad = (transform.rotationDeg * Math.PI) / 180;
+              const dx = point.x - transform.x;
+              const dy = point.y - transform.y;
+              const cos = Math.cos(-rad);
+              const sin = Math.sin(-rad);
+              const lx = dx * cos - dy * sin;
+              const ly = dx * sin + dy * cos;
+              return Math.abs(lx) <= width / 2 && Math.abs(ly) <= height / 2;
+            })();
 
-              {productOptions.showGenderFit ? (
-                <Form.Group className="mb-3">
-                  <Form.Label>Fit</Form.Label>
-                  <Form.Select
-                    value={selectedGenderFit}
-                    onChange={(event) => setSelectedGenderFit(event.target.value)}
-                  >
-                    {AVAILABLE_GENDER_FITS.map((fit) => (
-                      <option key={fit} value={fit}>
-                        {fit}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              ) : null}
+            if (showHandlesRef.current !== isOverDesign) {
+              showHandlesRef.current = isOverDesign;
+              redrawCanvas();
+            }
+          }}
+          onMouseUp={(event) => {
+            stopDrag();
+            event.currentTarget.style.cursor = "grab";
+          }}
+          onMouseLeave={(event) => {
+            stopDrag();
+            event.currentTarget.style.cursor = "grab";
+            showHandlesRef.current = false;
+            redrawCanvas();
+          }}
+          onTouchStart={(event) => {
+            const touch = event.touches[0];
+            if (!touch) return;
+            if (beginDrag(touch.clientX, touch.clientY)) {
+              event.preventDefault();
+            }
+          }}
+          onTouchMove={(event) => {
+            const touch = event.touches[0];
+            if (!touch || !dragStateRef.current.mode) return;
+            event.preventDefault();
+            updateDrag(touch.clientX, touch.clientY);
+          }}
+          onTouchEnd={() => stopDrag()}
+        />
 
-              {productOptions.showMaterial ? (
-                <Form.Group className="mb-4">
-                  <Form.Label>Material</Form.Label>
-                  <Form.Select value={selectedMaterial} onChange={(event) => setSelectedMaterial(event.target.value)}>
-                    {AVAILABLE_MATERIALS.map((material) => (
-                      <option key={material.value} value={material.label}>
-                        {material.label}
-                      </option>
-                    ))}
-                  </Form.Select>
-                </Form.Group>
-              ) : null}
+        <div className="mockup-info-bar">
+          <span>{product.name}</span>
+          {productOptions.showSize && selectedSize ? <span>Size: {selectedSize}</span> : null}
+          {productOptions.showMaterial && selectedMaterial ? <span>{selectedMaterial}</span> : null}
+          {showSideControls ? <span className="text-capitalize">{activeSide}</span> : null}
+        </div>
 
-              <Form.Group className="mb-4">
-                <Form.Label>Design</Form.Label>
-                <div className="d-flex align-items-center gap-2 mb-2">
+        <div className="canvas-meta-row">
+          {dimensionReadout ? (
+            <span className="dimension-readout">
+              Print size: {dimensionReadout.width}" × {dimensionReadout.height}"
+            </span>
+          ) : null}
+          <span className="dimension-readout">
+            {Math.round(scaleValue * 100)}%
+          </span>
+          <span className="dimension-readout">
+            {rotationValue}°
+          </span>
+          <button className="reset-link" onClick={resetPosition}>
+            Reset
+          </button>
+        </div>
+      </div>
+
+      <div className="customizer-controls-panel customizer-panel">
+        {productOptions.showColor ? (
+          <div className="control-group">
+            <span className="control-group-label">Color</span>
+            <div className="d-flex flex-wrap gap-2">
+              {colorOptions.map((option) => {
+                const isSelected = selectedColor === option.label;
+
+                return (
                   <button
+                    key={option.label}
                     type="button"
-                    className="design-picker-arrow"
-                    onClick={() => setVisibleStartIndex((current) => Math.max(current - 1, 0))}
-                    disabled={visibleStartIndex === 0}
+                    aria-label={option.label}
+                    title={option.label}
+                    onClick={() => setSelectedColor(option.label)}
+                    className="btn p-0 d-inline-flex align-items-center justify-content-center rounded-circle"
+                    style={{
+                      width: "2.5rem",
+                      height: "2.5rem",
+                      backgroundColor: option.value,
+                      border: option.label === "White" ? "1px solid #ccc" : "1px solid transparent",
+                      boxShadow: isSelected ? "0 0 0 3px var(--slp-clay)" : "0 0 0 1px rgba(0, 0, 0, 0.08)",
+                    }}
                   >
-                    ‹
-                  </button>
-                  <div className="d-flex gap-2 flex-grow-1">
-                    {visibleDesigns.map((design) => {
-                      const isSelected = activeDesignId === design.id;
-
-                      return (
-                        <button
-                          key={design.id}
-                          type="button"
-                          onClick={() => selectDesign(design.id)}
-                          className="btn p-2 text-center flex-fill"
-                          style={{
-                            minWidth: 0,
-                            borderRadius: "12px",
-                            border: isSelected ? "2px solid var(--slp-clay)" : "1px solid var(--slp-sand)",
-                            backgroundColor: "#ffffff",
-                            boxShadow: isSelected ? "0 0 0 2px rgba(136, 76, 66, 0.12)" : "none",
-                          }}
-                        >
-                          <img
-                            src={design.imageUrl}
-                            alt={design.label}
-                            style={{
-                              width: "80px",
-                              height: "80px",
-                              objectFit: "contain",
-                              display: "block",
-                              margin: "0 auto 0.5rem",
-                            }}
-                          />
-                          <span className="small fw-semibold d-block text-truncate">{design.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <button
-                    type="button"
-                    className="design-picker-arrow"
-                    onClick={() =>
-                      setVisibleStartIndex((current) =>
-                        Math.min(current + 1, Math.max(availableDesigns.length - 3, 0))
-                      )
-                    }
-                    disabled={visibleStartIndex + 3 >= availableDesigns.length}
-                  >
-                    ›
-                  </button>
-                </div>
-                {isUploading ? (
-                  <div className="d-flex align-items-center gap-2 small fw-semibold text-secondary">
-                    <Spinner animation="border" size="sm" />
-                    Uploading design...
-                  </div>
-                ) : null}
-              </Form.Group>
-
-              <Form.Group className="mb-3">
-                <Form.Label>Upload your own design</Form.Label>
-                <Form.Control type="file" accept="image/png" onChange={handleUpload} />
-                <Form.Text className="text-secondary">
-                  PNG only. Uploaded designs stay available while this page remains open.
-                </Form.Text>
-                {uploadError ? <div className="text-danger small mt-2">{uploadError}</div> : null}
-              </Form.Group>
-
-              <div className="pt-2 border-top">
-                <p className="small text-secondary mb-2">Current selections</p>
-                <div className="d-flex flex-wrap gap-2">
-                  {productOptions.showColor ? <Badge bg="dark">{selectedColor}</Badge> : null}
-                  {productOptions.showSize ? <Badge bg="secondary">{selectedSize}</Badge> : null}
-                  {productOptions.showGenderFit ? <Badge bg="info">{selectedGenderFit}</Badge> : null}
-                  <Badge bg="warning" text="dark">{activeDesign.label}</Badge>
-                  {productOptions.showMaterial ? <Badge bg="success">{selectedMaterial}</Badge> : null}
-                  {showSideControls ? <Badge bg="light" text="dark" className="text-capitalize">{activeSide}</Badge> : null}
-                </div>
-              </div>
-
-              {saveMessage ? <Alert variant="success" className="mt-3 mb-0 py-2">{saveMessage}</Alert> : null}
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col lg={7}>
-          <Card className="shadow-sm border-0">
-            <Card.Body>
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <div>
-                  <h2 className="h5 fw-bold mb-1">Mockup Preview</h2>
-                  <p className="text-secondary mb-0">
-                    Drag the design directly on the mockup to place it.
-                  </p>
-                </div>
-                <Badge bg="light" text="dark">
-                  {product.tagline}
-                </Badge>
-              </div>
-
-              {showSideControls ? (
-                <div className="side-toggle">
-                  <button
-                    type="button"
-                    className={activeSide === "front" ? "active" : ""}
-                    onClick={() => switchSide("front")}
-                  >
-                    Front
-                  </button>
-                  <button
-                    type="button"
-                    className={activeSide === "back" ? "active" : ""}
-                    onClick={() => switchSide("back")}
-                  >
-                    Back
-                  </button>
-                </div>
-              ) : null}
-
-              {showSideControls ? (
-                <div className="placement-buttons">
-                  <button type="button" onClick={() => placeDesign("chest-left")}>
-                    ↖ Left Chest
-                  </button>
-                  <button type="button" onClick={() => placeDesign("chest-center")}>
-                    ↑ Center
-                  </button>
-                  <button type="button" onClick={() => placeDesign("chest-right")}>
-                    ↗ Right Chest
-                  </button>
-                </div>
-              ) : null}
-
-              <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                <div className="d-flex gap-2">
-                  <button
-                    type="button"
-                    className="btn customizer-action-btn btn-sm"
-                    onClick={() => handleScaleButton(-0.1)}
-                  >
-                    Smaller
-                  </button>
-                  <button
-                    type="button"
-                    className="btn customizer-action-btn btn-sm"
-                    onClick={() => handleScaleButton(0.1)}
-                  >
-                    Larger
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="btn customizer-reset-btn btn-sm text-decoration-none px-0"
-                  onClick={resetPosition}
-                >
-                  Reset position
-                </button>
-              </div>
-
-              <div className="mb-3">
-                <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-1">
-                  <label htmlFor={`${product.slug}-scale`} className="form-label mb-0">Scale</label>
-                  <div className="d-flex align-items-center gap-2 flex-wrap">
-                    <span className="small text-secondary">{Math.round(scaleValue * 100)}%</span>
-                    {dimensionReadout ? (
-                      <span className="dimension-readout">
-                        Print size: {dimensionReadout.width}" × {dimensionReadout.height}"
+                    {isSelected ? (
+                      <span
+                        style={{
+                          color:
+                            option.label === "Light Gray" ||
+                            option.label === "Sand" ||
+                            option.label === "White"
+                              ? "#212529"
+                              : "#ffffff",
+                          fontSize: "1rem",
+                          fontWeight: 700,
+                          lineHeight: 1,
+                        }}
+                      >
+                        ✓
                       </span>
                     ) : null}
-                  </div>
-                </div>
-                <Form.Range
-                  id={`${product.slug}-scale`}
-                  min={0.2}
-                  max={3}
-                  step={0.05}
-                  value={scaleValue}
-                  onChange={handleScaleSliderChange}
-                />
-              </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
-              <div className="mb-3">
-                <div className="d-flex justify-content-between align-items-center mb-1">
-                  <label htmlFor={`${product.slug}-rotation`} className="form-label mb-0">Rotation</label>
-                  <span className="small text-secondary">{rotationValue}°</span>
-                </div>
-                <Form.Range
-                  id={`${product.slug}-rotation`}
-                  min={-180}
-                  max={180}
-                  step={1}
-                  value={rotationValue}
-                  onChange={handleRotationChange}
-                />
-              </div>
+        {productOptions.showSize ? (
+          <div className="control-group">
+            <span className="control-group-label">Size</span>
+            <Form.Select value={selectedSize} onChange={(event) => setSelectedSize(event.target.value)}>
+              {AVAILABLE_SIZES.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+        ) : null}
 
-              <div className="customizer-canvas-shell">
-                <canvas
-                  ref={canvasRef}
-                  width={520}
-                  height={520}
-                  className="w-100"
-                  style={{ maxWidth: "520px", display: "block", margin: "0 auto", touchAction: "none", cursor: "grab" }}
-                  onMouseDown={(event) => {
-                    if (beginDrag(event.clientX, event.clientY)) {
-                      event.currentTarget.style.cursor = "grabbing";
-                    }
-                  }}
-                  onMouseMove={(event) => updateDrag(event.clientX, event.clientY)}
-                  onMouseUp={(event) => {
-                    stopDrag();
-                    event.currentTarget.style.cursor = "grab";
-                  }}
-                  onMouseLeave={(event) => {
-                    stopDrag();
-                    event.currentTarget.style.cursor = "grab";
-                  }}
-                  onTouchStart={(event) => {
-                    const touch = event.touches[0];
-                    if (!touch) return;
-                    if (beginDrag(touch.clientX, touch.clientY)) {
-                      event.preventDefault();
-                    }
-                  }}
-                  onTouchMove={(event) => {
-                    const touch = event.touches[0];
-                    if (!touch || !dragStateRef.current.isDragging) return;
-                    event.preventDefault();
-                    updateDrag(touch.clientX, touch.clientY);
-                  }}
-                  onTouchEnd={() => stopDrag()}
-                />
-                <div className="mockup-info-bar">
-                  <span>{product.name}</span>
-                  {productOptions.showSize && selectedSize ? <span>Size: {selectedSize}</span> : null}
-                  {productOptions.showMaterial && selectedMaterial ? <span>{selectedMaterial}</span> : null}
-                  {showSideControls ? <span className="text-capitalize">{activeSide}</span> : null}
-                </div>
-              </div>
+        {productOptions.showGenderFit ? (
+          <div className="control-group">
+            <span className="control-group-label">Fit</span>
+            <Form.Select
+              value={selectedGenderFit}
+              onChange={(event) => setSelectedGenderFit(event.target.value)}
+            >
+              {AVAILABLE_GENDER_FITS.map((fit) => (
+                <option key={fit} value={fit}>
+                  {fit}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+        ) : null}
 
-              <button
-                type="button"
-                className="btn btn-brand btn-lg w-100 mt-3"
-                onClick={handleAddToCart}
-                disabled={isUploading || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
-              >
-                {isUploading ? (
-                  <>
-                    <Spinner animation="border" size="sm" className="me-2" />
-                    Uploading design...
-                  </>
-                ) : (
-                  "Add to cart"
-                )}
-              </button>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        {productOptions.showMaterial ? (
+          <div className="control-group">
+            <span className="control-group-label">Material</span>
+            <Form.Select value={selectedMaterial} onChange={(event) => setSelectedMaterial(event.target.value)}>
+              {AVAILABLE_MATERIALS.map((material) => (
+                <option key={material.value} value={material.label}>
+                  {material.label}
+                </option>
+              ))}
+            </Form.Select>
+          </div>
+        ) : null}
+
+        <div className="control-group control-group--wide">
+          <span className="control-group-label">Design</span>
+          <div className="d-flex align-items-center gap-2">
+            <button
+              type="button"
+              className="design-picker-arrow"
+              onClick={() => setVisibleStartIndex((current) => Math.max(current - 1, 0))}
+              disabled={visibleStartIndex === 0}
+            >
+              ‹
+            </button>
+            <div className="d-flex gap-2 flex-grow-1">
+              {visibleDesigns.map((design) => {
+                const isSelected = activeDesignId === design.id;
+
+                return (
+                  <button
+                    key={design.id}
+                    type="button"
+                    onClick={() => selectDesign(design.id)}
+                    className="btn p-2 text-center flex-fill"
+                    style={{
+                      minWidth: 0,
+                      borderRadius: "12px",
+                      border: isSelected ? "2px solid var(--slp-clay)" : "1px solid var(--slp-sand)",
+                      backgroundColor: "#ffffff",
+                      boxShadow: isSelected ? "0 0 0 2px rgba(136, 76, 66, 0.12)" : "none",
+                    }}
+                  >
+                    <img
+                      src={design.imageUrl}
+                      alt={design.label}
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        objectFit: "contain",
+                        display: "block",
+                        margin: "0 auto 0.5rem",
+                      }}
+                    />
+                    <span className="small fw-semibold d-block text-truncate">{design.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              className="design-picker-arrow"
+              onClick={() =>
+                setVisibleStartIndex((current) =>
+                  Math.min(current + 1, Math.max(availableDesigns.length - 3, 0))
+                )
+              }
+              disabled={visibleStartIndex + 3 >= availableDesigns.length}
+            >
+              ›
+            </button>
+          </div>
+          {isUploading ? (
+            <div className="d-flex align-items-center gap-2 small fw-semibold text-secondary">
+              <Spinner animation="border" size="sm" />
+              Uploading design...
+            </div>
+          ) : null}
+        </div>
+
+        <div className="control-group control-group--wide">
+          <span className="control-group-label">Upload</span>
+          <Form.Control type="file" accept="image/png" onChange={handleUpload} />
+          <Form.Text className="text-secondary">
+            PNG only. Uploaded designs stay available while this page remains open.
+          </Form.Text>
+          {uploadError ? <div className="text-danger small mt-2">{uploadError}</div> : null}
+        </div>
+      </div>
+
+      <div className="customizer-footer-row">
+        <div className="d-flex flex-wrap gap-2 align-items-center">
+          {productOptions.showColor ? <Badge bg="dark">{selectedColor}</Badge> : null}
+          {productOptions.showSize ? <Badge bg="secondary">{selectedSize}</Badge> : null}
+          {productOptions.showGenderFit ? <Badge bg="info">{selectedGenderFit}</Badge> : null}
+          <Badge bg="warning" text="dark">{activeDesign.label}</Badge>
+          {productOptions.showMaterial ? <Badge bg="success">{selectedMaterial}</Badge> : null}
+          {showSideControls ? <Badge bg="light" text="dark" className="text-capitalize">{activeSide}</Badge> : null}
+          {saveMessage ? <div className="save-toast">✓ {saveMessage}</div> : null}
+        </div>
+
+        <button
+          type="button"
+          className="btn btn-brand btn-lg"
+          onClick={handleAddToCart}
+          disabled={isUploading || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
+          style={{ minWidth: "200px", borderRadius: "999px" }}
+        >
+          {isUploading ? (
+            <>
+              <Spinner animation="border" size="sm" className="me-2" />
+              Uploading design...
+            </>
+          ) : (
+            "Add to cart"
+          )}
+        </button>
+      </div>
     </div>
   );
 }
