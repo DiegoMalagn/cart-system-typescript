@@ -35,8 +35,7 @@ export function StoreItem({
           <Card.Img
             variant="top"
             src={imageUrl}
-            height="200px"
-            style={{ objectFit: "cover", width: "100%" }}
+            style={{ objectFit: "cover", width: "100%", aspectRatio: "4 / 5" }}
             className="product-image"
           />
         </div>
@@ -76,7 +75,7 @@ export function StoreItem({
               Select a size
             </Button>
           ) : quantity === 0 ? (
-            <Button className="w-100 shadow" variant="success" onClick={() => increaseCartQuantity(id, selectedSize)}>
+            <Button className="w-100 shadow" variant="success" onClick={() => increaseCartQuantity(id, selectedSize, undefined, price)}>
               + Add to Cart
             </Button>
           ) : (
@@ -86,7 +85,7 @@ export function StoreItem({
                   -
                 </Button>
                 <span>{quantity} in Cart</span>
-                <Button variant="success" onClick={() => increaseCartQuantity(id, selectedSize)}>
+                <Button variant="success" onClick={() => increaseCartQuantity(id, selectedSize, undefined, price)}>
                   +
                 </Button>
               </div>

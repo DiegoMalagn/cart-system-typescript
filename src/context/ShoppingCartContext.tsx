@@ -56,6 +56,7 @@ export type CartItem = {
   id: number;
   size: string;
   quantity: number;
+  price?: number;
   // TODO: when order is placed, backend should persist imageUrl to the order
   // record so the PNG can be retrieved for DTF gang sheet fulfillment.
   customization?: CartItemCustomization;
@@ -66,10 +67,15 @@ type ShoppingCartContext = {
   cartItems: CartItem[];
   openCart: () => void;
   closeCart: () => void;
-getItemQuantity: (id: number, size: string, customization?: CartItemCustomization) => number;
-increaseCartQuantity: (id: number, size: string, customization?: CartItemCustomization) => void;
-decreaseCartQuantity: (id: number, size: string, customization?: CartItemCustomization) => void;
-removeFromCart: (id: number, size: string, customization?: CartItemCustomization) => void;
+  getItemQuantity: (id: number, size: string, customization?: CartItemCustomization) => number;
+  increaseCartQuantity: (
+    id: number,
+    size: string,
+    customization?: CartItemCustomization,
+    price?: number
+  ) => void;
+  decreaseCartQuantity: (id: number, size: string, customization?: CartItemCustomization) => void;
+  removeFromCart: (id: number, size: string, customization?: CartItemCustomization) => void;
 };
 
 const ShoppingCartContext = createContext({} as ShoppingCartContext);
@@ -106,14 +112,19 @@ export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
     return cartItems.find(item => isMatchingCartItem(item, id, size, customization))?.quantity || 0;
   }
 
-  function increaseCartQuantity(id: number, size: string, customization?: CartItemCustomization) {
+  function increaseCartQuantity(
+    id: number,
+    size: string,
+    customization?: CartItemCustomization,
+    price?: number
+  ) {
   setCartItems(currItems => {
     const existing = currItems.find(
       item => isMatchingCartItem(item, id, size, customization)
     );
 
     if (!existing) {
-      return [...currItems, { id, size, quantity: 1, customization }];
+      return [...currItems, { id, size, quantity: 1, customization, price }];
     }
 
     return currItems.map(item =>

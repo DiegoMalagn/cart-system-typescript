@@ -1,26 +1,26 @@
 [
   {
     "id": 1,
-    "name": "Classic Black Tee",
-    "description": "Minimalist black t-shirt made from 100% premium cotton. Soft, breathable, and perfect for everyday wear.",
-    "price": 25,
-    "imageUrl": "https://images.unsplash.com/photo-1520975916090-3105956dac38?w=500",
+    "name": "Best Dad Ever Tee",
+    "price": 17,
+    "imageUrl": "/assets/store/bestdadever.png",
+    "description": "Celebrate the best dad in your life this Father's Day with this bold stamp-print tee. Featuring our signature 'Best Dad Ever' design stamped across the back in classic ink-style lettering. A gift he'll actually wear.",
     "sizes": ["S", "M", "L", "XL"]
   },
   {
     "id": 2,
-    "name": "Oversized Street Tee",
-    "description": "Loose-fit oversized t-shirt inspired by streetwear culture. Heavyweight fabric with dropped shoulders.",
-    "price": 35,
-    "imageUrl": "https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?w=500",
-    "sizes": ["M", "L", "XL"]
+    "name": "Faith Tee",
+    "price": 17,
+    "imageUrl": "/assets/store/faith.png",
+    "description": "A women's tee with quiet confidence. The word 'faith.' is stamped on the back in elegant script — a reminder you carry with you everywhere you go.",
+    "sizes": ["S", "M", "L", "XL"]
   },
   {
-    "id": 4,
-    "name": "Graphic Print Tee",
-    "description": "Bold graphic t-shirt printed on premium cotton with long-lasting ink.",
-    "price": 32,
-    "imageUrl": "https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=500",
+    "id": 3,
+    "name": "Love Tee",
+    "price": 17,
+    "imageUrl": "/assets/store/love.png",
+    "description": "Simple, sweet, and made to be worn. This girl's tee features 'love' with a small heart stamped on the front — because some things don't need explaining.",
     "sizes": ["S", "M", "L", "XL"]
   }
 ]

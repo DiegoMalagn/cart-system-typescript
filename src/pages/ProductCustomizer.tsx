@@ -3,6 +3,10 @@ import { Badge, Form, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
 import design1 from "../assets/designs/stampDesign1.png";
 import design2 from "../assets/designs/stampDesign2.png";
+import designBestDadEver from "../assets/designs/bestDadEverDesign.png";
+import designFaith from "../assets/designs/faithDesign.png";
+import designFaith2 from "../assets/designs/faithDesign2.png";
+import designLove from "../assets/designs/loveDesign.png";
 import tshirtBlackFront from "../assets/mockups/tshirts/tshirt-black-front.png";
 import tshirtBlackBack from "../assets/mockups/tshirts/tshirt-black-back.png";
 import tshirtWhiteFront from "../assets/mockups/tshirts/tshirt-white-front.png";
@@ -110,6 +114,30 @@ const colorOptions = [
 const AVAILABLE_DESIGNS: DesignOption[] = [
   { id: "design-1", label: "Design 1", sourceType: "preset", imageUrl: design1 },
   { id: "design-2", label: "Design 2", sourceType: "preset", imageUrl: design2 },
+  {
+    id: "design-bestdadever",
+    label: "Best Dad Ever",
+    sourceType: "preset",
+    imageUrl: designBestDadEver,
+  },
+  {
+    id: "design-faith",
+    label: "Faith",
+    sourceType: "preset",
+    imageUrl: designFaith,
+  },
+  {
+    id: "design-faith2",
+    label: "Faith 2",
+    sourceType: "preset",
+    imageUrl: designFaith2,
+  },
+  {
+    id: "design-love",
+    label: "Love",
+    sourceType: "preset",
+    imageUrl: designLove,
+  },
 ];
 
 const AVAILABLE_MATERIALS = [
@@ -119,6 +147,14 @@ const AVAILABLE_MATERIALS = [
 
 const AVAILABLE_SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"];
 // future: add XS, 4XL etc. here
+const SIZE_PRICES: Record<string, number> = {
+  S: 17.0,
+  M: 17.0,
+  L: 17.0,
+  XL: 17.0,
+  XXL: 20.0,
+  XXXL: 22.0,
+};
 
 const AVAILABLE_GENDER_FITS = ["Unisex", "Men's", "Women's"];
 
@@ -494,6 +530,9 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
 
   const [selectedColor, setSelectedColor] = useState(colorOptions[0].label);
   const [selectedSize, setSelectedSize] = useState(AVAILABLE_SIZES[0]);
+  const currentPrice = productOptions.showSize
+    ? (SIZE_PRICES[selectedSize] ?? 17.0)
+    : 17.0;
   const [selectedGenderFit, setSelectedGenderFit] = useState(AVAILABLE_GENDER_FITS[0]);
   const [selectedMaterial, setSelectedMaterial] = useState(AVAILABLE_MATERIALS[0].label);
   const [uploadedDesigns, setUploadedDesigns] = useState<DesignOption[]>([]);
@@ -938,7 +977,8 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     increaseCartQuantity(
       product.id,
       productOptions.showSize ? selectedSize : "",
-      customization
+      customization,
+      currentPrice
     );
     setSaveMessage("Added to cart");
     window.setTimeout(() => setSaveMessage(null), 2500);
@@ -946,6 +986,7 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
     activeDesign,
     activeSide,
     availableDesigns,
+    currentPrice,
     increaseCartQuantity,
     product.id,
     productOptions.showColor,
@@ -1293,22 +1334,25 @@ export function ProductCustomizer({ productType }: ProductCustomizerProps) {
           {saveMessage ? <div className="save-toast">✓ {saveMessage}</div> : null}
         </div>
 
-        <button
-          type="button"
-          className="btn btn-brand btn-lg"
-          onClick={handleAddToCart}
-          disabled={isUploading || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
-          style={{ minWidth: "200px", borderRadius: "999px" }}
-        >
-          {isUploading ? (
-            <>
-              <Spinner animation="border" size="sm" className="me-2" />
-              Uploading design...
-            </>
-          ) : (
-            "Add to cart"
-          )}
-        </button>
+        <div className="d-flex flex-column align-items-end">
+          <div className="customizer-price">${currentPrice.toFixed(2)}</div>
+          <button
+            type="button"
+            className="btn btn-brand btn-lg"
+            onClick={handleAddToCart}
+            disabled={isUploading || (activeDesign.sourceType === "upload" && !activeDesign.imageUrl)}
+            style={{ minWidth: "200px", borderRadius: "999px" }}
+          >
+            {isUploading ? (
+              <>
+                <Spinner animation="border" size="sm" className="me-2" />
+                Uploading design...
+              </>
+            ) : (
+              "Add to cart"
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
