@@ -5,7 +5,6 @@ import { About } from "./pages/About";
 import { Navbar } from "./components/Navbar";
 import { ShoppingCartProvider } from "./context/ShoppingCartContext";
 import Footer from "./components/Footer";
-import { ProductPage } from "./pages/ProductPage";
 import { PaymentSuccess } from "./pages/Success";
 import { PaymentFailed } from "./pages/Failed";
 import { ProductCustomizer } from "./pages/ProductCustomizer";
@@ -20,7 +19,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
-          <Route path="/product/:id" element={<ProductPage />} />
           <Route path="/customize/tshirt" element={<ProductCustomizer productType="tshirt" />} />
           <Route path="/customize/hoodie" element={<ProductCustomizer productType="hoodie" />} />
           <Route path="/customize/sweater" element={<ProductCustomizer productType="sweater" />} />

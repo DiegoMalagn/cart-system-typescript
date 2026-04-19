@@ -1,8 +1,5 @@
 import { useState } from "react";
-import { Col, Row } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import storeItems from "../data/items.json";
-import { StoreItem } from "../components/StoreItem";
 import { customProducts } from "../data/customProducts";
 import logo from "../assets/logo.png";
 import imgTshirt from "../assets/stock/tshirtlogo.png";
@@ -24,14 +21,9 @@ const accordionImages: Record<string, string> = {
   totebag: imgTotebag,
 };
 
-const STORE_DISPLAY_ORDER = [1, 3, 2];
-
 export function Home() {
   const navigate = useNavigate();
   const [expandedSlug, setExpandedSlug] = useState<string | null>(customProducts[0]?.slug ?? null);
-  const orderedItems = STORE_DISPLAY_ORDER
-    .map((id) => storeItems.find((item) => item.id === id))
-    .filter((item): item is (typeof storeItems)[number] => Boolean(item));
 
   const handleAccordionClick = (slug: string) => {
     if (expandedSlug === slug) {
@@ -121,30 +113,6 @@ export function Home() {
       </div>
 
       <section className="my-5" id="products">
-        <div className="text-center mb-4">
-          <h2 className="mb-0 fw-bold" style={{ color: "var(--slp-clay)" }}>
-            Ready to Buy
-          </h2>
-          <div
-            style={{
-              width: "48px",
-              height: "2px",
-              margin: "8px auto 24px",
-              backgroundColor: "var(--slp-sand)",
-            }}
-          />
-        </div>
-
-        <Row md={2} xs={1} lg={3} className="g-3">
-          {orderedItems.map((item) => (
-            <Col key={item.id}>
-              <StoreItem {...item} />
-            </Col>
-          ))}
-        </Row>
-      </section>
-
-      <section className="my-5">
         <div className="text-center mb-4">
           <h2 className="mb-0 fw-bold" style={{ color: "var(--slp-clay)" }}>
             Make It Yours
