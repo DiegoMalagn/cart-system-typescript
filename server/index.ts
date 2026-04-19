@@ -29,6 +29,19 @@ dotenv.config();
 
 console.log("Starting server...");
 
+const REQUIRED_SMTP_ENV_VARS = [
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USER",
+  "SMTP_PASS",
+] as const;
+
+for (const envVar of REQUIRED_SMTP_ENV_VARS) {
+  if (!process.env[envVar]?.trim()) {
+    throw new Error(`Missing required SMTP environment variable: ${envVar}`);
+  }
+}
+
 mongoose
   .connect(process.env.MONGO_URI!)
   .then(() => console.log("MongoDB connected"))
@@ -73,7 +86,25 @@ const transporter = nodemailer.createTransport({
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
+  requireTLS: true,
+  connectionTimeout: 15000,
+  greetingTimeout: 15000,
+  socketTimeout: 20000,
 });
+
+async function verifyTransport() {
+  try {
+    await transporter.verify();
+    console.log("SMTP connection ready");
+  } catch (error) {
+    const smtpError = error as NodeJS.ErrnoException;
+    console.error("SMTP VERIFY FAILED:", error);
+    console.error("SMTP VERIFY FAILED message:", smtpError.message);
+    console.error("SMTP VERIFY FAILED code:", smtpError.code);
+  }
+}
+
+void verifyTransport();
 
 const CLIENT_URL = (process.env.CLIENT_URL || "http://localhost:5173")
   .trim()
@@ -483,24 +514,31 @@ app.post("/checkout", async (req, res) => {
 });
 
 app.post("/api/contact", async (req, res) => {
-  const { name, email, subject, message } = req.body as {
-    name: string;
-    email: string;
-    subject: string;
-    message: string;
-  };
-
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: "All fields are required" });
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ error: "Invalid email address" });
-  }
-
   try {
-    await transporter.sendMail({
+    console.log("Contact request received");
+
+    const { name, email, subject, message } = req.body as {
+      name: string;
+      email: string;
+      subject: string;
+      message: string;
+    };
+
+    if (!name || !email || !subject || !message) {
+      return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: "Invalid email address" });
+    }
+
+    await transporter.verify();
+    console.log("SMTP verify passed for contact request");
+    console.log("Sending contact email");
+
+    const sendResult = await Promise.race([
+      transporter.sendMail({
       from: `"Stamp Lab Prints" <${process.env.SMTP_USER}>`,
       to: "stamplabprints@outlook.com",
       replyTo: email,
@@ -535,12 +573,26 @@ app.post("/api/contact", async (req, res) => {
           </p>
         </div>
       `,
-    });
+      }),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Contact email timed out")), 20000);
+      }),
+    ]);
 
-    return res.json({ success: true });
-  } catch (err) {
-    console.error("Email send failed:", err);
-    return res.status(500).json({ error: "Failed to send message" });
+    console.log(
+      "Email sent:",
+      typeof sendResult === "object" && sendResult && "messageId" in sendResult
+        ? sendResult.messageId
+        : "unknown"
+    );
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    const emailError = error as NodeJS.ErrnoException;
+    console.error("EMAIL ERROR:", error);
+    console.error("EMAIL ERROR message:", emailError.message);
+    console.error("EMAIL ERROR code:", emailError.code);
+    return res.status(500).json({ error: "Email failed to send" });
   }
 });
 
