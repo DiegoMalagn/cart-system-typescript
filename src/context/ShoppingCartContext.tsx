@@ -1,6 +1,8 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { ShoppingCart } from "../components/ShoppingCart";
 import { useLocalStorage } from "../hooks/useLocalStorage";
+import storeItems from "../data/items.json";
+import { customProductMap } from "../data/customProducts";
 
 type ShoppingCartProviderProps = {
   children: ReactNode;
@@ -79,6 +81,10 @@ type ShoppingCartContext = {
 };
 
 const ShoppingCartContext = createContext({} as ShoppingCartContext);
+// Increment this version string any time the cart item schema
+// changes (new required fields, price structure changes, etc.)
+// to avoid stale localStorage data causing checkout errors.
+const CART_STORAGE_KEY = "shopping-cart-v2";
 
 function getCustomizationKey(customization?: CartItemCustomization) {
   return customization ? JSON.stringify(customization) : "base-item";
@@ -97,8 +103,25 @@ export function useShoppingCart() {
 }
 
 export function ShoppingCartProvider({ children }: ShoppingCartProviderProps) {
-  const [cartItems, setCartItems] = useLocalStorage<CartItem[]>("shopping-cart",[]);
+  const [rawCartItems, setCartItems] = useLocalStorage<CartItem[]>(CART_STORAGE_KEY, []);
   const [isOpen, setIsOpen] = useState(false);
+  const cartItems = useMemo(
+    () =>
+      rawCartItems.filter((item) => {
+        const isStoreItem = storeItems.some((product) => product.id === item.id);
+        const isCustomItem = item.customization?.productType
+          ? Object.keys(customProductMap).includes(item.customization.productType)
+          : false;
+        return isStoreItem || isCustomItem;
+      }),
+    [rawCartItems]
+  );
+
+  useEffect(() => {
+    if (cartItems.length !== rawCartItems.length) {
+      setCartItems(cartItems);
+    }
+  }, [cartItems, rawCartItems.length, setCartItems]);
 
   const cartQuantity = cartItems.reduce(
     (quantity, item) => item.quantity + quantity,

@@ -6,6 +6,16 @@ import { useShoppingCart } from "../context/ShoppingCartContext";
 import { buildCartQuoteRequest } from "../utilities/cartPayload";
 import { formatCurrency } from "../utilities/formatCurrency";
 import type { CartQuoteResponse } from "../types/quote";
+import storeItems from "../data/items.json";
+
+const SIZE_PRICES: Record<string, number> = {
+  S: 17.0,
+  M: 17.0,
+  L: 17.0,
+  XL: 17.0,
+  XXL: 20.0,
+  XXXL: 22.0,
+};
 
 function formatCents(amount: number) {
   return formatCurrency(amount / 100);
@@ -23,7 +33,28 @@ export function CheckoutReview() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const quoteRequest = useMemo(() => buildCartQuoteRequest(cartItems), [cartItems]);
+  const resolvedItems = useMemo(
+    () =>
+      cartItems.map((item) => {
+        const sourceProduct = storeItems.find((product) => product.id === item.id);
+        let price: number;
+
+        if (item.customization?.productType) {
+          price = item.customization.size
+            ? (SIZE_PRICES[item.customization.size] ?? 17.0)
+            : 17.0;
+        } else if (sourceProduct) {
+          price = sourceProduct.price;
+        } else {
+          price = item.price ?? 17.0;
+        }
+
+        return { ...item, price };
+      }),
+    [cartItems]
+  );
+
+  const quoteRequest = useMemo(() => buildCartQuoteRequest(resolvedItems), [resolvedItems]);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -79,7 +110,7 @@ export function CheckoutReview() {
     return () => {
       cancelled = true;
     };
-  }, [cartItems, quoteRequest]);
+  }, [cartItems.length, quoteRequest]);
 
   async function handleProceedToStripe() {
     if (cartItems.length === 0) return;
