@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Badge, Form, Spinner } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import design1 from "../assets/designs/stampDesign1.png";
-import design2 from "../assets/designs/stampDesign2.png";
 import designBestDadEver from "../assets/designs/bestDadEverDesign.png";
 import designFaith from "../assets/designs/faithDesign.png";
 import designFaith2 from "../assets/designs/faithDesign2.png";
@@ -112,8 +110,6 @@ const colorOptions = [
 ];
 
 const AVAILABLE_DESIGNS: DesignOption[] = [
-  { id: "design-1", label: "Design 1", sourceType: "preset", imageUrl: design1 },
-  { id: "design-2", label: "Design 2", sourceType: "preset", imageUrl: design2 },
   {
     id: "design-bestdadever",
     label: "Best Dad Ever",
