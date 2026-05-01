@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Card, Form, Spinner } from "react-bootstrap";
-import { FaInstagram, FaTiktok } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 
 export function Contact() {
@@ -149,6 +149,17 @@ export function Contact() {
               style={{ color: "var(--slp-clay)", textDecoration: "none" }}
             >
               @stamplabprints
+            </a>
+          </div>
+          <div className="d-flex justify-content-center align-items-center gap-2 mb-2">
+            <FaFacebook style={{ color: "var(--slp-clay)" }} />
+            <a
+              href="https://www.facebook.com/stamplabprints1"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--slp-clay)", textDecoration: "none" }}
+            >
+              @stamplabprints1
             </a>
           </div>
           <div className="d-flex justify-content-center align-items-center gap-2">

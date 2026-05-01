@@ -1,24 +1,56 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { customProducts } from "../data/customProducts";
-import logo from "../assets/logo.png";
-import imgTshirt from "../assets/stock/tshirtlogo.png";
-import imgHoodie from "../assets/stock/hoodielogo.png";
-import imgSweatshirt from "../assets/stock/sweatshirtlogo.png";
-import imgGlassCup from "../assets/stock/frostedglasscuplogo.png";
-import imgHat from "../assets/stock/caplogo.png";
-import imgApron from "../assets/stock/apronlogo.png";
-import imgTotebag from "../assets/stock/linenbagwithlogo.png";
+import imgTshirt from "../assets/stock/slpTshirtExample.png";
+import imgHoodie from "../assets/stock/slpHoodieExample.png";
+import imgSweatshirt from "../assets/stock/slpSweatshirtExample.png";
+import imgGlassCup from "../assets/stock/slpCupSipping.png";
+import imgTumbler from "../assets/stock/slpTumblerExample.png";
+import imgHat from "../assets/stock/slpHatpink.png";
+import imgApron from "../assets/stock/slpApronOutside.png";
+import imgTotebag from "../assets/stock/womanToteBag.png";
 import heroHome from "../assets/store/heroHome.png";
 
-const accordionImages: Record<string, string> = {
-  tshirt: imgTshirt,
-  hoodie: imgHoodie,
-  sweater: imgSweatshirt,
-  glasscup: imgGlassCup,
-  hat: imgHat,
-  apron: imgApron,
-  totebag: imgTotebag,
+const hasTumblerProduct = customProducts.some(
+  (product) => String(product.slug) === "tumbler"
+);
+
+const accordionCardConfig: Record<
+  string,
+  {
+    backgroundImage: string;
+    backgroundPosition?: string;
+  }
+> = {
+  tshirt: {
+    backgroundImage: `url(${imgTshirt})`,
+    backgroundPosition: "center center",
+  },
+  hoodie: {
+    backgroundImage: `url(${imgHoodie})`,
+    backgroundPosition: "center center",
+  },
+  sweater: {
+    backgroundImage: `url(${imgSweatshirt})`,
+    backgroundPosition: "center center",
+  },
+  glasscup: {
+    // TODO: add tumbler as a separate product slug when ready
+    backgroundImage: `url(${hasTumblerProduct ? imgGlassCup : imgTumbler})`,
+    backgroundPosition: "center center",
+  },
+  hat: {
+    backgroundImage: `url(${imgHat})`,
+    backgroundPosition: "center center",
+  },
+  apron: {
+    backgroundImage: `url(${imgApron})`,
+    backgroundPosition: "center center",
+  },
+  totebag: {
+    backgroundImage: `url(${imgTotebag})`,
+    backgroundPosition: "center center",
+  },
 };
 
 export function Home() {
@@ -57,57 +89,34 @@ export function Home() {
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(to bottom, rgba(20, 10, 8, 0.18) 0%, rgba(136, 76, 66, 0.38) 60%, rgba(136, 76, 66, 0.72) 100%)",
+                "linear-gradient(to bottom, rgba(20, 10, 8, 0.05) 0%, rgba(20, 10, 8, 0.15) 40%, rgba(136, 76, 66, 0.55) 70%, rgba(136, 76, 66, 0.85) 100%)",
               zIndex: 1,
             }}
           />
 
           <div
-            className="text-center px-3"
             style={{
-              position: "relative",
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              padding: "2.5rem 2rem",
               zIndex: 2,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
+              textAlign: "center",
             }}
           >
-            <img
-              src={logo}
-              alt="Stamp Lab Prints"
-              style={{
-                height: "80px",
-                width: "auto",
-                filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.3))",
-              }}
-            />
             <h1
-              className="mt-4 mb-3 text-white fw-bold"
+              className="mb-3 text-white fw-bold"
               style={{ fontSize: "clamp(2rem, 5vw, 3.5rem)" }}
             >
               Your design. Your style. Stamped.
             </h1>
             <p
-              className="mb-4"
+              className="mb-0"
               style={{ color: "var(--slp-sand)", fontSize: "clamp(1rem, 2vw, 1.25rem)" }}
             >
               Custom DTF transfers on shirts, hoodies, hats, and more.
             </p>
-            <a
-              href="#products"
-              className="btn px-4 py-3 fw-semibold"
-              style={{
-                background: "var(--slp-peach)",
-                color: "#fff",
-                padding: "0.75rem 2.5rem",
-                borderRadius: "999px",
-                border: "none",
-                transition: "background 0.2s ease",
-              }}
-            >
-              Shop Now
-            </a>
           </div>
         </div>
       </div>
@@ -130,6 +139,7 @@ export function Home() {
         <div className="accordion-card-row">
           {customProducts.map((product) => {
             const isExpanded = expandedSlug === product.slug;
+            const cardConfig = accordionCardConfig[product.slug];
 
             return (
               <button
@@ -137,7 +147,8 @@ export function Home() {
                 type="button"
                 className={`accordion-card ${isExpanded ? "expanded" : expandedSlug ? "collapsed" : ""}`}
                 style={{
-                  backgroundImage: `url(${accordionImages[product.slug]})`,
+                  backgroundImage: cardConfig?.backgroundImage,
+                  backgroundPosition: cardConfig?.backgroundPosition ?? "center center",
                   textAlign: "left",
                   border: "none",
                   padding: 0,
